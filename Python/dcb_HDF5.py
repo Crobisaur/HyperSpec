@@ -12,6 +12,10 @@ def build25bandGroup(hFile,string=None):
     group = hFile.create_group(string)
     return group
 
+def buildGroup(hFile, string=None):
+    group = hFile.create_group(string)
+    return group
+
 def addDataset(group, name, data, debug=False):
     """Takes a numpy array and adds it to a dataset in group"""
     d = data

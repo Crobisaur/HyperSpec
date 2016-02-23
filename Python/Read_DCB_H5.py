@@ -1,5 +1,6 @@
 __author__ = 'Christo Robison'
 
+import dcb_HDF5
 import glob, os
 import numpy as np
 import h5py as HDF
@@ -65,6 +66,14 @@ def readHDF(inputFile, debug=False):
         
     f.close()
 
+def buildHDF(inputFile, inputData, debug=False):
+    """Creates a HDF file based on the data given, two possible datasets
+    can be built, 25band set and 32 band set"""
+    #Generate HDF5 file for input data
+    HDFile = dcb_HDF5.creataeTable("HsWbc_25.h5")
+    data_gp = dcb_HDF5.build25BandGroup(HDFile, "data")
+    data_gp.attrs["RPArrowPrism"] = '25 Bands'
+    label_gp = dcb_HDF5.build25BandGroup(HDFile, 'label')
 
 
 
