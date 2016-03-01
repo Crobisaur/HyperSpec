@@ -8,6 +8,11 @@ def createTable(filename):
     f = h5py.File(filename, 'w')
     return f
 
+def openTable(filename):
+    '''Opens file for read/write and creates if not exist'''
+    f = h5py.File(filename, 'a')
+    return f
+
 def build25bandGroup(hFile,string=None):
     group = hFile.create_group(string)
     return group

@@ -67,6 +67,16 @@ def iterBSQ(path, debug=False):
                 D = findBSQ(subDir, objNames[i])
                 dataList.append(D)
 
+    #add for loop to compile data together
+    for p, data in enumerate(dataList):
+        print(maskList[p].Name, data.Name)
+        if maskList[p].Name == data.Name:
+            dataList[p].MaskData = maskList[p].MaskData
+        if p == len(dataList)-1:
+            if debug: print(p, data.Name, "LAST ITEM")
+
+        
+
 
                 #mask_file = os.path.join(subDir, maskNames[mask])
                 #mask_dir = os.path.dirname(mask_file)

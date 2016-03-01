@@ -12,10 +12,10 @@ import matplotlib
 #matplotlib.use('Qt4Agg')
 
 # apparently you can only pass helper functions into f.visit(*helper*)
-def printname(name):
+def printName(name):
     print(name)
 
-def print_attrs(name, obj):
+def printAttrs(name, obj):
     print(name)
     fro key, val in obj.items():
     print("    %s:  %" % (key, val))
@@ -64,24 +64,35 @@ def readHDF(inputFile, debug=False):
             print(np.shape(tot))
             print(cls.shape)
         
-    f.close()
+    e = dcb_HDF5.saveClose(f)
+    if(e): print("File " + inputFile + " saved Successfully!")
 
-def buildHDF(inputFile, inputData, debug=False):
+
+def buildHDF(inputFile, inputData, inputLabels, debug=False):
     """Creates a HDF file based on the data given, two possible datasets
     can be built, 25band set and 32 band set"""
-    #Generate HDF5 file for input data
-    HDFile = dcb_HDF5.creataeTable("HsWbc_25.h5")
+    #Generate HDF5 file for input data stored as a list of datacube 
+    HDFile = dcb_HDF5.openTable(inputFile)
     data_gp = dcb_HDF5.build25BandGroup(HDFile, "data")
-    data_gp.attrs["RPArrowPrism"] = '25 Bands'
+    #determine the number of bands in the data, as well as band wavelenghts
+    bands = inputData.shape()
+    data_gp.attrs["RPArrowPrism"] = str(bands[2]) + ' Bands'
     label_gp = dcb_HDF5.build25BandGroup(HDFile, 'label')
+    for p,  data in enumerate(inputData):  #with fix in create_bsq_dataset, now masks and data should be in same data struct
+        if debug: if (inputData[p].Name == data.Name): print (inputData[p].Name)
+        if debug: if p = len(inputData)-1: print(p, inputData[p].Name, "LAST ITEM")
 
+        labelSet = dcb_HDF5.addDataset(label_gp,inputData[p].Name,inputData[p].MaskData,debug)
+        dataSet = dcb_HDF5.addDataset(data_gp,inputData[p].Name,inputData[p].HSdata, debug)
+        dataSet.attrs["units"] = "AU"
+        labelSet.attrs["Parent_DCB"] = inputData[p].Name
+    dcb_HDF5.saveClose(HDFile)  #add label to file under correct filename
 
-
-
-
+###############################################################################
 def main(argv):
     inputPath = ''
     outputfile = ''
+    overwrite = False
     try:
         opts, args = getopt.getopt(argv,"hi:o",["iPath=","ofile="])
     except getopt.GetoptError:
@@ -100,6 +111,7 @@ def main(argv):
         elif opt in ("-o", "--ofile"):
             outputFile = arg
             print('Output File = "', outputfile)
+
 
 
 if (__name__=="__main__"):
