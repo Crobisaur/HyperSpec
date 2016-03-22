@@ -1,7 +1,8 @@
 __author__ = 'Christo Robison'
 
 import dcb_HDF5
-import glob, os
+import glob, os, sys
+import getopt
 import numpy as np
 import h5py as HDF
 from sklearn import cross_validation
@@ -17,8 +18,8 @@ def printName(name):
 
 def printAttrs(name, obj):
     print(name)
-    fro key, val in obj.items():
-    print("    %s:  %" % (key, val))
+    for key, val in obj.items():
+        print("    %s:  %" % (key, val))
 
 def findItem(name):
     if name in name:
@@ -79,8 +80,9 @@ def buildHDF(inputFile, inputData, inputLabels, debug=False):
     data_gp.attrs["RPArrowPrism"] = str(bands[2]) + ' Bands'
     label_gp = dcb_HDF5.build25BandGroup(HDFile, 'label')
     for p,  data in enumerate(inputData):  #with fix in create_bsq_dataset, now masks and data should be in same data struct
-        if debug: if (inputData[p].Name == data.Name): print (inputData[p].Name)
-        if debug: if p = len(inputData)-1: print(p, inputData[p].Name, "LAST ITEM")
+        if debug:
+            if p == len(inputData)-1: print(p, inputData[p].Name, "LAST ITEM")
+            if (inputData[p].Name == data.Name): print (inputData[p].Name)
 
         labelSet = dcb_HDF5.addDataset(label_gp,inputData[p].Name,inputData[p].MaskData,debug)
         dataSet = dcb_HDF5.addDataset(data_gp,inputData[p].Name,inputData[p].HSdata, debug)
@@ -89,6 +91,8 @@ def buildHDF(inputFile, inputData, inputLabels, debug=False):
     dcb_HDF5.saveClose(HDFile)  #add label to file under correct filename
 
 ###############################################################################
+
+
 def main(argv):
     inputPath = ''
     outputfile = ''
