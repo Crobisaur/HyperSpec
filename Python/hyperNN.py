@@ -72,8 +72,8 @@ def train():
 
     # Input placehoolders
     with tf.name_scope('input'):
-        x = tf.placeholder(tf.float32, [3000, 25], name='x-input')
-        image_shaped_input = x #tf.reshape(x, [-1, 25])
+        x = tf.placeholder(tf.float32, [None, 25], name='x-input')
+        image_shaped_input = tf.reshape(x, [-1, 25,1,1])
         tf.image_summary('input', image_shaped_input, 2)
         y_ = tf.placeholder(tf.float32, [None, 2], name='y-input')
         keep_prob = tf.placeholder(tf.float32)
@@ -125,9 +125,9 @@ def train():
             tf.histogram_summary(layer_name + '/activations', activations)
             return activations
 
-    hidden1 = nn_layer(x, 25, 500, 'layer1')
+    hidden1 = nn_layer(x, 25, 30, 'layer1')
     dropped = tf.nn.dropout(hidden1, keep_prob)
-    y = nn_layer(dropped, 500, 2, 'layer2', act=tf.nn.softmax)
+    y = nn_layer(dropped, 30, 2, 'layer2', act=tf.nn.softmax)
 
 
     with tf.name_scope('cross_entropy'):
@@ -160,10 +160,10 @@ def train():
     def feed_dict(train):
         """Make a TensorFlow feed_dict: maps data onto Tensor placeholders."""
         if train or FLAGS.fake_data:
-            xs, ys = dcb.next_batch(100, fake_data=FLAGS.fake_data)
+            xs, ys = train_dcb, train_labels#.next_batch(100, fake_data=FLAGS.fake_data)
             k = FLAGS.dropout
         else:
-            xs, ys = train_dcb, train_labels
+            xs, ys = train_dcb[0:3000,:], train_labels[0:3000,:]
             k = 1.0
         return {x: xs, y_: ys, keep_prob: k}
 
