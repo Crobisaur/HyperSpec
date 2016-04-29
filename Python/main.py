@@ -21,7 +21,7 @@ import scipy
 import struct, os
 from PIL import Image
 from PIL import ImageOps
-import tifffile as TIFFfile
+#import tifffile as TIFFfile
 from scipy import io
 import glob
 import skimage.io

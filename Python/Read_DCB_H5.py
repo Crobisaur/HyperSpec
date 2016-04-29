@@ -12,6 +12,7 @@ import matplotlib
 
 #matplotlib.use('Qt4Agg')
 
+
 # apparently you can only pass helper functions into f.visit(*helper*)
 def printName(name):
     print(name)

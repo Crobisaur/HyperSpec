@@ -158,7 +158,7 @@ def readtiff(filename):
 #main section of convertBsqMulti.py
 
 if __name__ == "__main__":
-    pathName = r'D:\-_THESIS_DATA_-\Slide2'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1
+    pathName = r'/media/crob/USB30FD/HyperSpec_Data/All bsq static'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1
     os.chdir(pathName)
     #objNames = glob.glob1(pathName,"*.bsq")
     #bsqCount = len(objNames)
@@ -197,7 +197,7 @@ if __name__ == "__main__":
 
             img = dcb[:, :, 0]
             im = Image.fromarray(img)
-            im.show()
+            #im.show()
             #imshow(img)
 
         ## Write the result as a 16-bit TIFF file. Note that very few TIFF viewers support
