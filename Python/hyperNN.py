@@ -36,7 +36,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data '
                                          'for unit testing.')
-flags.DEFINE_integer('max_steps', 1000, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 100, 'Number of steps to run trainer.')
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
 flags.DEFINE_float('dropout', 0.9, 'Keep probability for training dropout.')
 flags.DEFINE_string('data_dir', '/tmp/data', 'Directory for storing data')
@@ -45,13 +45,13 @@ flags.DEFINE_string('summaries_dir', '/home/crob/HyperSpec_logs', 'Summaries dir
 f = h5py.File('/home/crob/HyperSpec/Python/BSQ_test.h5','r')
 
 dcb = f['data'][:]
-train_dcb = dcb[0:6000000,:]
-test_dcb = dcb[6000000::,:]
+train_dcb = dcb[4::4,:]
+test_dcb = dcb[5000000::,:]
 labels = f['labels'][:]
 lambdas = f['bands'][:]
 binLabels = f['bin_labels'][:]
-train_labels = binLabels[0:6000000,:]
-test_labels = binLabels[6000000::,:]
+train_labels = binLabels[4::4,:]
+test_labels = binLabels[5000000::,:]
 f.close()
 
 def train():
@@ -100,7 +100,7 @@ def train():
             tf.scalar_summary('sttdev/' + name, stddev)
             tf.scalar_summary('max/' + name, tf.reduce_max(var))
             tf.scalar_summary('min/' + name, tf.reduce_min(var))
-            tf.histogram_summary(name, var)
+            #tf.histogram_summary(name, var)
 
     def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
         """Reusable code for making a simple neural net layer.
@@ -120,9 +120,9 @@ def train():
                 variable_summaries(biases, layer_name + '/biases')
             with tf.name_scope('Wx_plus_b'):
                 preactivate = tf.matmul(input_tensor, weights) + biases
-                tf.histogram_summary(layer_name + '/pre_activations', preactivate)
+           #     tf.histogram_summary(layer_name + '/pre_activations', preactivate)
             activations = act(preactivate, 'activation')
-            tf.histogram_summary(layer_name + '/activations', activations)
+     #       tf.histogram_summary(layer_name + '/activations', activations)
             return activations
 
     hidden1 = nn_layer(x, 25, 30, 'layer1')
@@ -163,7 +163,7 @@ def train():
             xs, ys = train_dcb, train_labels#.next_batch(100, fake_data=FLAGS.fake_data)
             k = FLAGS.dropout
         else:
-            xs, ys = train_dcb[0:3000,:], train_labels[0:3000,:]
+            xs, ys = test_dcb, test_labels
             k = 1.0
         return {x: xs, y_: ys, keep_prob: k}
 
