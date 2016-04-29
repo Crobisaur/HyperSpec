@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import h5py
+import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -40,6 +42,17 @@ flags.DEFINE_float('dropout', 0.9, 'Keep probability for training dropout.')
 flags.DEFINE_string('data_dir', '/tmp/data', 'Directory for storing data')
 flags.DEFINE_string('summaries_dir', '/home/crob/HyperSpec_logs', 'Summaries directory')
 
+f = h5py.File('/home/crob/HyperSpec/Python/BSQ_test.h5','r')
+
+dcb = f['data'][:]
+train_dcb = dcb[0:6000000,:]
+test_dcb = dcb[6000000::,:]
+labels = f['labels'][:]
+lambdas = f['bands'][:]
+binLabels = f['bin_labels'][:]
+train_labels = binLabels[0:6000000,:]
+test_labels = binLabels[6000000::,:]
+f.close()
 
 def train():
     # Import data
@@ -59,10 +72,10 @@ def train():
 
     # Input placehoolders
     with tf.name_scope('input'):
-        x = tf.placeholder(tf.float32, [None, 784], name='x-input')
-        image_shaped_input = tf.reshape(x, [-1, 28, 28, 1])
-        tf.image_summary('input', image_shaped_input, 10)
-        y_ = tf.placeholder(tf.float32, [None, 10], name='y-input')
+        x = tf.placeholder(tf.float32, [3000, 25], name='x-input')
+        image_shaped_input = x #tf.reshape(x, [-1, 25])
+        tf.image_summary('input', image_shaped_input, 2)
+        y_ = tf.placeholder(tf.float32, [None, 2], name='y-input')
         keep_prob = tf.placeholder(tf.float32)
         tf.scalar_summary('dropout_keep_probability', keep_prob)
 
@@ -112,9 +125,9 @@ def train():
             tf.histogram_summary(layer_name + '/activations', activations)
             return activations
 
-    hidden1 = nn_layer(x, 784, 500, 'layer1')
+    hidden1 = nn_layer(x, 25, 500, 'layer1')
     dropped = tf.nn.dropout(hidden1, keep_prob)
-    y = nn_layer(dropped, 500, 10, 'layer2', act=tf.nn.softmax)
+    y = nn_layer(dropped, 500, 2, 'layer2', act=tf.nn.softmax)
 
 
     with tf.name_scope('cross_entropy'):
@@ -147,10 +160,10 @@ def train():
     def feed_dict(train):
         """Make a TensorFlow feed_dict: maps data onto Tensor placeholders."""
         if train or FLAGS.fake_data:
-            xs, ys = mnist.train.next_batch(100, fake_data=FLAGS.fake_data)
+            xs, ys = dcb.next_batch(100, fake_data=FLAGS.fake_data)
             k = FLAGS.dropout
         else:
-            xs, ys = mnist.test.images, mnist.test.labels
+            xs, ys = train_dcb, train_labels
             k = 1.0
         return {x: xs, y_: ys, keep_prob: k}
 
@@ -171,3 +184,4 @@ def main(_):
 
 if __name__ == '__main__':
     tf.app.run()
+
