@@ -1,11 +1,16 @@
 __author__ = "Christo Robison"
 
 import numpy as np
+from scipy import signal
+from scipy import misc
 import h5py
 from PIL import Image
 import os
 import collections
+import matplotlib.pyplot as plt
 import convertBsqMulti as bsq
+import png
+
 
 '''This program reads in BSQ datacubes into an HDF file'''
 
@@ -14,6 +19,7 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
     d25 = []
     l25 = []
     l = []
+    l3 = []
     lam = []
     for root, dirs, files in os.walk(path):
         for name in sorted(files): #os walk iterates arbitrarily, sort fixes it
@@ -23,9 +29,13 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                 im = np.array(Image.open(os.path.join(root,name)),'f')
                 print np.shape(im)
                 bw = im[:,:,0] > 250
+                # generate a mask for 3x3 conv layer (probably not needed)
+                conv3bw = signal.convolve2d(bw, np.ones([22,22],dtype=np.int), mode='valid') >= 464
                 print(np.shape(bw))
-                #l.append(bw)
+                p = open(name+'_22sqMask.png','wb')
+                w = png.Writer(255)
                 bw = np.flipud(bw)
+                l3.append(np.reshape(conv3bw, ))
                 l.append(np.reshape(bw, 138659))
 
                 print(np.shape(im))
@@ -80,7 +90,7 @@ if __name__ == '__main__':
     path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25'
     s = loadBSQ(path)
     print(np.shape(s.data25))
-    f = h5py.File("BSQ_test.h5", "w")
+    f = h5py.File("BSQ25_unique.h5", "w")
     f.create_dataset('data', data=s.data25)
     f.create_dataset('labels', data=s.labels)
     f.create_dataset('bands', data=s.lambdas)

@@ -44,20 +44,61 @@ flags.DEFINE_string('summaries_dir', '/home/crob/HyperSpec_logs', 'Summaries dir
 
 f = h5py.File('/home/crob/HyperSpec/Python/BSQ_test.h5','r')
 
+def convert_labels(labels,n_classes, debug = False):
+    for j in range(n_classes):
+
+        temp = labels == j
+        temp = temp.astype(int)
+        if j > 0:
+            conv_labels = np.append(conv_labels, temp)
+            print(temp[:])
+        else:
+            conv_labels = temp
+    print(np.shape(conv_labels))
+    conv_labels = np.reshape(conv_labels, [len(labels), n_classes], order='F')
+    if debug: print(np.shape(conv_labels))
+    return conv_labels
+
+
+
 dcb = f['data'][:]
-train_dcb = dcb[4::4,:]
-test_dcb = dcb[5000000::,:]
+train_dcb = dcb[0:2200000,:]
+test_dcb = dcb[3000000::,:]
 labels = f['labels'][:]
 lambdas = f['bands'][:]
 binLabels = f['bin_labels'][:]
-train_labels = binLabels[4::4,:]
-test_labels = binLabels[5000000::,:]
+train_labels = binLabels[0:2200000,:]
+test_labels = binLabels[3000000::,:]
+wbc = dcb[labels]
+wbc_train = wbc[0:75000,:]
+wbc_test= wbc[75000::,:]
+
+#wbc_labels = labels == 1
+wbc_labels = np.ones(len(wbc))
+wbc_train_labels = wbc_labels[0:75000]
+wbc_test_labels = wbc_labels[75000::]
+
+other = dcb[np.invert(labels)]
+other_train = other[10::10,:]
+other_test = other[7::7,:]
+other_labels = np.zeros(len(other))
+other_labels_train = other_labels[10::10]
+other_labels_test = other_labels[7::7]
+
+combset_train = np.vstack([wbc_train, other_train])
+combset_test = np.vstack([wbc_test, other_test])
+combset_train_labels = convert_labels(np.hstack([wbc_train_labels, other_labels_train]), 2)
+combset_test_labels = convert_labels(np.hstack([wbc_test_labels, other_labels_test]), 2)
+
+
+#combset = np.vstack([wbc,other[np.random.randint(250000)]])
+
 f.close()
 
 def train():
     # Import data
-    mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True,
-                                      fake_data=FLAGS.fake_data)
+    #mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True,
+                                      #fake_data=FLAGS.fake_data)
 
     sess = tf.InteractiveSession()
 
@@ -72,8 +113,9 @@ def train():
 
     # Input placehoolders
     with tf.name_scope('input'):
+
         x = tf.placeholder(tf.float32, [None, 25], name='x-input')
-        image_shaped_input = tf.reshape(x, [-1, 25,1,1])
+        image_shaped_input = tf.reshape(x, [-1, 25])
         tf.image_summary('input', image_shaped_input, 2)
         y_ = tf.placeholder(tf.float32, [None, 2], name='y-input')
         keep_prob = tf.placeholder(tf.float32)
@@ -125,9 +167,11 @@ def train():
      #       tf.histogram_summary(layer_name + '/activations', activations)
             return activations
 
-    hidden1 = nn_layer(x, 25, 30, 'layer1')
+    hidden1 = nn_layer(x, 25, 10, 'layer1')
     dropped = tf.nn.dropout(hidden1, keep_prob)
-    y = nn_layer(dropped, 30, 2, 'layer2', act=tf.nn.softmax)
+    #hidden2 = nn_layer(dropped, 20, 30,'layer2')
+    #dropped2 = tf.nn.dropout(hidden2, keep_prob)
+    y = nn_layer(dropped, 10, 2, 'layer2', act=tf.nn.softmax)
 
 
     with tf.name_scope('cross_entropy'):
@@ -160,10 +204,10 @@ def train():
     def feed_dict(train):
         """Make a TensorFlow feed_dict: maps data onto Tensor placeholders."""
         if train or FLAGS.fake_data:
-            xs, ys = train_dcb, train_labels#.next_batch(100, fake_data=FLAGS.fake_data)
+            xs, ys = train_dcb, train_labels  #.next_batch(100, fake_data=FLAGS.fake_data)  combset_train, combset_train_labels
             k = FLAGS.dropout
         else:
-            xs, ys = test_dcb, test_labels
+            xs, ys = test_dcb, test_labels #combset_test, combset_test_labels
             k = 1.0
         return {x: xs, y_: ys, keep_prob: k}
 
