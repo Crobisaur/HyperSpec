@@ -30,7 +30,9 @@ naming summary tags so that they are grouped meaningfully in TensorBoard.
 
 It demonstrates the functionality of every TensorBoard dashboard.
 """
-
+dcb_h = 443
+dcb_w = 313
+dcb_b = 25 #or 31 depending on datacube
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -94,6 +96,54 @@ combset_test_labels = convert_labels(np.hstack([wbc_test_labels, other_labels_te
 #combset = np.vstack([wbc,other[np.random.randint(250000)]])
 
 f.close()
+
+def cnnTrain():
+    # Import data & create placeholders
+    def conv2d(img, w, b):
+        '''A convolutional Layer which adds in biases'''
+        return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(
+            img, w, strides=[1, 1, 1, 1], padding='SAME'), b))
+
+    def max_pool(img, k):
+        '''A max pooling Layer for k size pooling'''
+        return tf.nn.max_pool(
+            img, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
+
+    def conv_net(_X, _weights, _biases, _dropout):
+        # Reshape Input
+        # This is our datacube input
+        _X = tf.reshape(_X, shape=[-1, dcb_h, dcb_w, dcb_b])
+
+        # Convolution Layer
+        conv1 = conv2d(_X, _weights['wc1'], _biases['bc1'])
+        # Max Pooling 2x downsample
+        conv1 = max_pool(conv1, k=2)
+        # Apply Dropout
+        conv1 = tf.nn.dropout(conv1, _dropout)
+
+        # Convolution Layer 2
+        conv2 = conv2d(conv1, _weights['wc2'], _biases['bc2'])
+        # Max Pooling 2x downsample
+        conv2 = max_pool(conv2, k=2)
+        # Apply Dropout
+        conv2 = tf.nn.dropout(conv2, _dropout)
+
+        # Fully-Connected (FC) layer
+        dense1 = tf.reshape(conv2, [-1, _weights['wd1'].get_shape().as_list[0]])
+        # ^ Reshape conv2 output to fit dense layer input (vector)
+        dense1 = tf.nn.relu(tf.add(tf.matmul(dense1, _weights['wd1']), _biases['bd1'])) # Relu Activation
+        dense1 = tf.nn.dropout(dense1, _dropout) # Apply Dropout
+
+        # Output class prediction
+        out = tf.add(tf.matmul(dense1, _weights['out']), _biases['out'])
+        return out
+
+    # Define our conv Kernels & weights below
+    weights = {
+        'wc1': tf.Variable(tf.random_normal([5, 5, 1, 32]))
+    }
+
+
 
 def train():
     # Import data
