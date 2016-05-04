@@ -97,6 +97,15 @@ combset_test_labels = convert_labels(np.hstack([wbc_test_labels, other_labels_te
 
 f.close()
 
+def readData(filename=None):
+    '''Read in default hd5 file otherwise read specified'''
+    if filename is None: filename = '/home/crob/HyperSpec/Python/BSQ_test.h5'
+    f = h5py.File(filename, 'r')
+    dcb = f['data'][:]
+    labels = f['labels'][:]
+    lambdas = f['bands'][:]
+
+
 def cnnTrain():
     # Import data & create placeholders
     def conv2d(img, w, b):
@@ -140,10 +149,60 @@ def cnnTrain():
 
     # Define our conv Kernels & weights below
     weights = {
-        'wc1': tf.Variable(tf.random_normal([5, 5, 1, 32]))
+        'wc1': tf.Variable(tf.random_normal([5, 5, 1, 25])),  # 5x5 conv layer 1 input 25 output
+        'wc2': tf.Variable(tf.random_normal([5, 5, 25, 50])), # 5x5 conv, 25 in 50 out
+        'wd1': tf.Variable(tf.random_normal([7*7*50, 1024])), # fully connected 7*7*50 in 1024 out
+        'out': tf.Variable(tf.random_normal([1024, n_classes])) # 1024 in, n out (number of classes)
     }
 
+    biases = {
+        'bc1': tf.Variable(tf.random_normal([25])),
+        'bc2': tf.Variable(tf.random_normal([50])),
+        'bd1': tf.Variable(tf.random_normal([1024])),
+        'out': tf.Variable(tf.random_normal([n_classes]))
+    }
 
+    # construct model,  the above variables are model layer definitions
+    pred = conv_net(x, weights, biases, keep_prob) # x is our input
+
+    # Define loss and optimizer
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(pred, y)) #y is our labels
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+
+    # Evlauate Model
+    correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+    # initialize variables
+
+    init = tf.initialize_all_variables()
+
+    # ready to run session (call run session)
+
+    def runSession(data, initializer, epoch=None):
+        if epoch is None: epoch = 5000
+        with tf.Session() as sess:
+            sess.run(init)
+            step = 1
+            # keep training until max iteratinos
+            # specify batch_size
+            while step < epoch:
+                batch_xs, batch_ys = data # input data goes here
+                # fit training using batch data
+                sess.run(optimizer, feed_dict={x: batch_xs, y: batch_ys, keep_prob: dropout})
+                if step % display_step == 0:
+                    acc = sess.run(accuracy, feed_dict={x: batch_xs, y: batch_ys, keep_prob: 1.})
+                    # calculate accuracy for this batch
+                    loss = sess.run(cost, feed_dict={x: batch_xs, y: batch_ys, keep_prob: 1.})
+                    print("Iter " + str(step) + ", Minibatch Loss= " +
+                          "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
+                step += 1
+            print "Optimization Finished"
+            # Calculate total Accuracy on test set
+            print("Testing Accuracy: ", sess.run(accuracy, feed_dict={x: test_data, y: test_labels, keep_prob: 1.}))
+        return True
+
+    return True
 
 def train():
     # Import data

@@ -32,11 +32,12 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                 # generate a mask for 3x3 conv layer (probably not needed)
                 conv3bw = signal.convolve2d(bw, np.ones([22,22],dtype=np.int), mode='valid') >= 464
                 print(np.shape(bw))
-                p = open(name+'_22sqMask.png','wb')
-                w = png.Writer(255)
+                #p = open(name+'_22sqMask.png','wb')
+                #w = png.Writer(255)
                 bw = np.flipud(bw)
-                l3.append(np.reshape(conv3bw, ))
-                l.append(np.reshape(bw, 138659))
+                #l3.append(np.reshape(conv3bw, ))
+                #l.append(np.reshape(bw, 138659))
+                l.append(bw)
 
                 print(np.shape(im))
                 print("Name = " + name)
@@ -51,17 +52,18 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                     lam = bs[1]
                     d31.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 4298429))
 
+
                 if len(bs[1]) == 25:
                     print('BSQ is size 25')
                     print(len(bs[1]))
                     lam = bs[1]
 
-                    #d25.append(bs[0].astype(np.float32))
-                    d25.append(np.reshape(bs[0],[138659,25]).astype(np.float32))
-                    #d25.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 3466475))
+                    d25.append(bs[0].astype(np.float32))
+                    #d25.append(np.reshape(bs[0],[138659,25]).astype(np.float32))
+                    # old don't use #d25.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 3466475))
 
     out = collections.namedtuple('examples',['data31','data25', 'labels', 'lambdas'])
-    o = out(data31=d31, data25=np.vstack(d25), labels=np.hstack(l), lambdas=lam)
+    o = out(data31=d31, data25=np.dstack(d25), labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
     return o
 
 def convert_labels(labels,n_classes, debug = False):
@@ -78,7 +80,7 @@ def convert_labels(labels,n_classes, debug = False):
     conv_labels = np.reshape(conv_labels, [len(labels), n_classes], order='F')
     if debug: print(np.shape(conv_labels))
     if debug:
-        f = h5py.File("/home/crob/HyperSpec/Python/BSQ_test.h5", "w")
+        f = h5py.File("/home/crob/HyperSpec/Python/BSQ_whole.h5", "w")
         f.create_dataset('bin_labels', data=conv_labels)
         f.close()
     return conv_labels
@@ -90,10 +92,10 @@ if __name__ == '__main__':
     path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25'
     s = loadBSQ(path)
     print(np.shape(s.data25))
-    f = h5py.File("BSQ25_unique.h5", "w")
-    f.create_dataset('data', data=s.data25)
+    f = h5py.File("BSQ25_whole.h5", "w")
+    f.create_dataset('data', data=s.data25, chunks=(443, 313, 1))
     f.create_dataset('labels', data=s.labels)
     f.create_dataset('bands', data=s.lambdas)
-    p = convert_labels(s.labels,2)
-    f.create_dataset('bin_labels', data=p)
+    #p = convert_labels(s.labels,2)
+    #f.create_dataset('bin_labels', data=p)
     f.close()
