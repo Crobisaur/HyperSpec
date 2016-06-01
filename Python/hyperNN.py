@@ -18,7 +18,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an 'AS IS' BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.`
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
@@ -36,8 +36,7 @@ dcb_b = 25 #or 31 depending on datacube
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data '
-                                         'for unit testing.')
+flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data for unit testing.')
 flags.DEFINE_integer('max_steps', 100, 'Number of steps to run trainer.')
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
 flags.DEFINE_float('dropout', 0.9, 'Keep probability for training dropout.')
@@ -96,6 +95,10 @@ combset_test_labels = convert_labels(np.hstack([wbc_test_labels, other_labels_te
 #combset = np.vstack([wbc,other[np.random.randint(250000)]])
 
 f.close()
+
+n_input = 443*313*25 # DCB dimensions
+n_classes = 2 # 4 ultimately
+dorpout = 0.75
 
 def readData(filename=None):
     '''Read in default hd5 file otherwise read specified'''

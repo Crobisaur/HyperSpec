@@ -110,8 +110,8 @@ def write_16bitTiff(filename, image):
 
     if img.dtype is not int16:
         if (amin(img) < 0): img = img - amin(img)
-        img = float32(img) * (2.0**15 - 1.0) / amax(img)
-        img = int16(img)
+        img = float32(img) * (2.0**7 - 1.0) / amax(img)
+        img = int8(img)
 
     ## The first method uses the "Image" library and converts the image to a string before converting to a PIL image.
     im = Image.fromarray(img)
@@ -158,7 +158,7 @@ def readtiff(filename):
 #main section of convertBsqMulti.py
 
 if __name__ == "__main__":
-    pathName = r'/media/crob/USB30FD/HyperSpec_Data/All bsq static'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1
+    pathName = r'/media/crob/HyperSpec/-_Red_Prism_-/fart'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1  /media/crob/USB30FD/HyperSpec_Data/All bsq static
     os.chdir(pathName)
     #objNames = glob.glob1(pathName,"*.bsq")
     #bsqCount = len(objNames)
