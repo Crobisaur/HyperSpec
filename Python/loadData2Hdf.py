@@ -22,22 +22,25 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
     l3 = []
     lam = []
     for root, dirs, files in os.walk(path):
+        print(dirs)
         for name in sorted(files): #os walk iterates arbitrarily, sort fixes it
             print(name)
             if name.endswith(".png"):
                 # Import label image
                 im = np.array(Image.open(os.path.join(root,name)),'f')
                 print np.shape(im)
-                bw = im[:,:,0] > 250
+                im = im[:,:,0:3] # > 250
                 # generate a mask for 3x3 conv layer (probably not needed)
-                conv3bw = signal.convolve2d(bw, np.ones([22,22],dtype=np.int), mode='valid') >= 464
-                print(np.shape(bw))
+                #conv3bw = signal.convolve2d(bw, np.ones([22,22],dtype=np.int), mode='valid') >= 464
+                print(np.shape(im))
                 #p = open(name+'_22sqMask.png','wb')
                 #w = png.Writer(255)
-                bw = np.flipud(bw)
+                #bw = np.flipud(bw)
+                im = np.flipud(im)
                 #l3.append(np.reshape(conv3bw, ))
                 #l.append(np.reshape(bw, 138659))
-                l.append(bw)
+
+                l.append(im)
 
                 print(np.shape(im))
                 print("Name = " + name)
@@ -50,7 +53,8 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                     print('BSQ is size 31')
                     print(len(bs[1]))
                     lam = bs[1]
-                    d31.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 4298429))
+                    #d31.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 4298429))
+                    d31.append(bs[0].astype(np.float32))
 
 
                 if len(bs[1]) == 25:
@@ -63,7 +67,7 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                     # old don't use #d25.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 3466475))
 
     out = collections.namedtuple('examples',['data31','data25', 'labels', 'lambdas'])
-    o = out(data31=d31, data25=np.dstack(d25), labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
+    o = out(data31=np.dstack(d31), data25=d25, labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
     return o
 
 def convert_labels(labels,n_classes, debug = False):
@@ -88,12 +92,12 @@ def convert_labels(labels,n_classes, debug = False):
 
 
 if __name__ == '__main__':
-    A = loadBSQ()
-    path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25'
+    #A = loadBSQ()
+    path = '/home/crob/-_PreSortedData_Train_-' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
     s = loadBSQ(path)
     print(np.shape(s.data25))
-    f = h5py.File("BSQ25_whole.h5", "w")
-    f.create_dataset('data', data=s.data25, chunks=(443, 313, 1))
+    f = h5py.File("HYPER_SPEC_TRAIN.h5", "w")
+    f.create_dataset('data', data=s.data31, chunks=(443, 313, 1))
     f.create_dataset('labels', data=s.labels)
     f.create_dataset('bands', data=s.lambdas)
     #p = convert_labels(s.labels,2)
