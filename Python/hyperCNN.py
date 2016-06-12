@@ -102,7 +102,8 @@ def getData(filename=None):
     dcb = f['data'][:]
     labels = f['labels'][:]
     bands = f['bands'][:]
-    out = {'dcb': dcb, 'labels': labels, 'lambdas': bands}
+    classLabels = f['classLabels'][:]
+    out = {'dcb': dcb, 'labels': labels, 'lambdas': bands, 'classLabels': classLabels}
     return out
 
 
@@ -160,38 +161,89 @@ def cnnTrain():
         # This is our datacube input
         _X = tf.reshape(_X, shape=[-1, dcb_size('height'), dcb_size('width'), dcb_size('channel_25')])
 
+def shapeData(data, labels, numExamples, numBands, altDims = None):
+    '''Takes input data matrix and reshapes it into HW,D format
+    i.e. endmembers and their appropriate class labels'''
+    if altDims is None: altDims = [443, 313, numBands, numExamples]
+    temp = np.reshape(data, altDims, 'f')
+    dataR = np.reshape(temp,[-1, numBands])
+    labelL = np.reshape(labels, [-1,1])
+    out = {'data': dataR, 'label': labelL}
+    return out
+
+def conv_model(X, y):
+    X = tf.expand_dims(X, 3)
+    features = tf.reduce_max(tf.contrib.learn.ops.conv2d(X, 12, [3, 3]), [1, 2])
+    features = tf.reshape(features, [-1, 12])
+    return tf.contrib.learn.models.logistic_regression(features, y)
 
 if __name__ == '__main__':
+    trainData = getData(filename='/home/crob/HYPER_SPEC_TRAIN.h5')
     testData = getData(filename='/home/crob/HYPER_SPEC_TEST.h5')
-    a = np.shape(testData['dcb'])
+    a = np.shape(trainData['dcb'])
     b = np.uint8(a[2]/31)
     print(b / 31)
-    lab = np.reshape(testData['labels'], [443,313,3,b],'f')
-    numExamples = np.shape(lab)
-    for j in range(np.uint8(numExamples[3])):
-        a = convLabels(lab[:,:,:,j], None)
+    #lab = np.reshape(testData['labels'], [443,313,3,b],'f')
+    #numExamples = np.shape(lab)
+    #for j in range(np.uint8(numExamples[3])):
+    #   a = convLabels(lab[:,:,:,j], None)
 
 
-    c = lab[:,:,:,1]
+
+    # working on reshaping images into w*h,d format
+    nn = np.reshape(trainData['dcb'],[443,313,31,138],'f')
+    #no need for fortran encoding this time
+    c = np.reshape(nn[:,:,:,1],[443*313,31])
     print(np.shape(c))
+    d = np.reshape(trainData['classLabels'],[443,313,138],'f')
+    dd = np.reshape(d[:,:,1],[443*313])
+
+    train = shapeData(trainData['dcb'], trainData['classLabels'], 138, 31)
+    test = shapeData(testData['dcb'], testData['classLabels'], 12, 31)
+    print(train['data'])
+    print(train['label'])
+    print(test['data'])
+    print(test['label'])
+
+#    c = lab[:,:,:,1]d
+    #print(np.shape(c))
     ##plt.figure(1)
     fig, ax = plt.subplots()
     ##plt.subplot(311)
-    img = ax.imshow(a)#c[:,:,0])
+    img = ax.imshow(c[0:313*2,:])#c[:,:,0])
     ##fig.add_subplot(312)
     ##plt.imshow(c[:,:,1])
     ##fig.add_subplot(313)
     ##plt.imshow(c[:,:,2])
     ax.format_coord = Formatter(img)
-    plt.show()
+    #print(dd[0:313 * 2])
+    #plt.show()
 
-    print(testData['lambdas'])
 
-    classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[40,80,40],
-                                               n_classes=4, steps=200)
+    #print data structure for reference
+    print(a)
 
-    iris = tf.contrib.learn.datasets.load_dataset('iris')
-    X_train, X_test, y_train, y_test = cross_validation.train_test_split(iris.data, iris.target,
-                                                                         test_size=0.2, random_state=42)
-    print(X_train)
-    print(y_train)
+    print(np.reshape(trainData['dcb'], [443,313,31,138],'f'))
+    print(trainData['dcb'])
+    print(trainData['classLabels'])
+    # reshape into vectors for easy data loading
+    # make sure labels are in same order
+
+    val_monitor = tf.contrib.learn.monitors.ValidationMonitor(test['data'], test['label'], every_n_steps=50)
+
+
+    classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[50,100,80,50],
+                                               n_classes=5, steps=20000, learning_rate=0.05)
+
+    #iris = tf.contrib.learn.datasets.load_dataset('iris')
+    #print(iris.data)
+    #X_train, X_test, y_train, y_test = cross_validation.train_test_split(test['data'], np.uint8(test['label']),
+    #                                                                     test_size=0.3, random_state=42)
+    print(np.shape(train['data']))
+    print(np.shape(train['label']))
+    classifier.fit(train['data'], train['label'], val_monitor)
+    classifier.save('testModel1/')
+    score = metrics.accuracy_score(test['label'], classifier.predict(test['data']))
+
+
+    print('Test Accuracy: {0:f}'.format(score))
