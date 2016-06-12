@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from sklearn import metrics, cross_validation
+from PIL import Image
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,7 +27,14 @@ flags.DEFINE_string('data_dir', '/tmp/data', 'Directory for storing data')
 flags.DEFINE_string('summaries_dir', '/home/crob/HyperSpec_logs',
                     'Directory for storing tensorboard summaries.')
 
-f = h5py.File('/home/crob/HyperSpec/Python/BSQ_test.h5','r')
+#f = h5py.File('/home/crob/HyperSpec/Python/BSQ_test.h5','r')
+class Formatter(object):
+    def __init__(self, im):
+        self.im = im
+    def __call__(self, x, y):
+        z = self.im.get_array()[int(y), int(x)]
+        return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
+
 
 def convert_labels(labels, n_classes, debug = False):
     for j in range(n_classes):
@@ -41,6 +50,52 @@ def convert_labels(labels, n_classes, debug = False):
     if debug: print(np.shape(conv_labels))
     return conv_labels
 
+def convLabels(labelImg, numBands):
+    '''
+    takes a MxNx3 numpy array and creates binary labels based on predefined classes
+    background = 0
+    red = 1 WBC
+    green = 2 RBC
+    pink = 3 nuclear material
+    yellow = 4 ignore
+    '''
+
+
+    #b = np.uint8(numBands / 31)
+    # print(b / 31)
+    tempRed = labelImg[:,:,0] == 255
+    tempGreen = labelImg[:,:,1] == 255
+    tempBlue = labelImg[:,:,2] == 255
+    tempYellow = np.logical_and(tempRed, tempGreen)
+    tempPink = np.logical_and(tempRed, tempBlue)
+    temp = np.zeros(np.shape(tempRed))
+    temp[tempRed] = 1
+    temp[tempGreen] = 2
+    temp[tempPink] = 3
+    temp[tempYellow] = 4
+    print(temp)
+    print(tempRed, tempGreen, tempBlue, tempYellow, tempPink)
+    return temp
+
+
+
+def convert_labels(labels,n_classes, debug = False):
+    for j in range(n_classes):
+
+        temp = labels == j
+        temp = temp.astype(int)
+        if j > 0:
+            conv_labels = np.append(conv_labels, temp)
+            print(temp[:])
+        else:
+            conv_labels = temp
+    print(np.shape(conv_labels))
+    conv_labels = np.reshape(conv_labels, [len(labels), n_classes], order='F')
+    if debug: print(np.shape(conv_labels))
+    return conv_labels
+
+
+
 def getData(filename=None):
     if filename is None: filename = '/home/crob/HyperSpec/Python/BSQ_test.h5'
     f = h5py.File(filename, 'r')
@@ -49,6 +104,7 @@ def getData(filename=None):
     bands = f['bands'][:]
     out = {'dcb': dcb, 'labels': labels, 'lambdas': bands}
     return out
+
 
 
 def read_data_as_vect(filepath, debug = False):
@@ -103,3 +159,39 @@ def cnnTrain():
         # Reshape Input
         # This is our datacube input
         _X = tf.reshape(_X, shape=[-1, dcb_size('height'), dcb_size('width'), dcb_size('channel_25')])
+
+
+if __name__ == '__main__':
+    testData = getData(filename='/home/crob/HYPER_SPEC_TEST.h5')
+    a = np.shape(testData['dcb'])
+    b = np.uint8(a[2]/31)
+    print(b / 31)
+    lab = np.reshape(testData['labels'], [443,313,3,b],'f')
+    numExamples = np.shape(lab)
+    for j in range(np.uint8(numExamples[3])):
+        a = convLabels(lab[:,:,:,j], None)
+
+
+    c = lab[:,:,:,1]
+    print(np.shape(c))
+    ##plt.figure(1)
+    fig, ax = plt.subplots()
+    ##plt.subplot(311)
+    img = ax.imshow(a)#c[:,:,0])
+    ##fig.add_subplot(312)
+    ##plt.imshow(c[:,:,1])
+    ##fig.add_subplot(313)
+    ##plt.imshow(c[:,:,2])
+    ax.format_coord = Formatter(img)
+    plt.show()
+
+    print(testData['lambdas'])
+
+    classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[40,80,40],
+                                               n_classes=4, steps=200)
+
+    iris = tf.contrib.learn.datasets.load_dataset('iris')
+    X_train, X_test, y_train, y_test = cross_validation.train_test_split(iris.data, iris.target,
+                                                                         test_size=0.2, random_state=42)
+    print(X_train)
+    print(y_train)

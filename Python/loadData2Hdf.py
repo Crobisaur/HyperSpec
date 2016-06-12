@@ -70,6 +70,35 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
     o = out(data31=np.dstack(d31), data25=d25, labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
     return o
 
+
+def convLabels(labelImg, numBands):
+    '''
+    takes a MxNx3 numpy array and creates binary labels based on predefined classes
+    background = 0
+    red = 1 WBC
+    green = 2 RBC
+    pink = 3 nuclear material
+    yellow = 4 ignore
+    '''
+
+
+    #b = np.uint8(numBands / 31)
+    # print(b / 31)
+    tempRed = labelImg[:,:,0] == 255
+    tempGreen = labelImg[:,:,1] == 255
+    tempBlue = labelImg[:,:,2] == 255
+    tempYellow = np.logical_and(tempRed, tempGreen)
+    tempPink = np.logical_and(tempRed, tempBlue)
+    temp = np.zeros(np.shape(tempRed))
+    temp[tempRed] = 1
+    temp[tempGreen] = 2
+    temp[tempPink] = 3
+    temp[tempYellow] = 4
+    print(temp)
+    print(tempRed, tempGreen, tempBlue, tempYellow, tempPink)
+    return temp
+
+
 def convert_labels(labels,n_classes, debug = False):
     for j in range(n_classes):
 
@@ -93,13 +122,21 @@ def convert_labels(labels,n_classes, debug = False):
 
 if __name__ == '__main__':
     #A = loadBSQ()
-    path = '/home/crob/-_PreSortedData_Train_-' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
+    path = '/home/crob/-_PreSortedData_Test_-' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
     s = loadBSQ(path)
     print(np.shape(s.data25))
-    f = h5py.File("HYPER_SPEC_TRAIN.h5", "w")
+    f = h5py.File("HYPER_SPEC_TEST.h5", "w")
     f.create_dataset('data', data=s.data31, chunks=(443, 313, 1))
     f.create_dataset('labels', data=s.labels)
     f.create_dataset('bands', data=s.lambdas)
+    g = np.shape(s.data31)
+    b = np.uint8(g[2] / 31)
+    lab = np.reshape(s.labels, [443, 313, 3, b], 'f')
+    numExamples = np.shape(lab)
+    a = []
+    for j in range(np.uint8(numExamples[3])):
+        a.append(convLabels(lab[:, :, :, j], None))
+    f.create_dataset('classLabels', data=np.dstack(a))
     #p = convert_labels(s.labels,2)
     #f.create_dataset('bin_labels', data=p)
     f.close()
