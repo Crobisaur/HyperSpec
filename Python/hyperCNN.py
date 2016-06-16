@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+
 """A HS Convolutional Neural Network that detects if a leukocyte is present in the image.
    Let's see how this pans out...
 """
@@ -177,7 +178,29 @@ def conv_model(X, y):
     features = tf.reshape(features, [-1, 12])
     return tf.contrib.learn.models.logistic_regression(features, y)
 
+
+def multiGPU_model(X, y):
+    with tf.device('/gpu:0'):
+        layers = tf.contrib.learn.ops.dnn(X, [50, 100, 80, 50], dropout=.5)
+    with tf.device('/gpu:1'):
+        return tf.contrib.learn.models.logistic_regression(layers,y)
+
+def hyperSpec_model(features, target):
+    #target = tf.one_hot(target,depth=5)
+    features = tf.contrib.layers.stack(features, tf.contrib.layers.fully_connected, [31, 50, 10])
+    prediction, loss = (
+        tf.contrib.learn.models.logistic_regression_zero_init(features, target)
+    )
+    train_op = tf.contrib.layers.optimize_loss(
+        loss, tf.contrib.framework.get_global_step(), optimizer='Adagrad',
+        learning_rate=0.1)
+    return {'class': tf.argmax(prediction, 1), 'prob': prediction}, loss, train_op
+
+
 if __name__ == '__main__':
+    #mnist = tf.contrib.learn.datasets.load_dataset('mnist')
+    #print(np.shape(mnist.train.images))
+    #print(np.shape(mnist.train.labels))
     trainData = getData(filename='/home/crob/HYPER_SPEC_TRAIN.h5')
     testData = getData(filename='/home/crob/HYPER_SPEC_TEST.h5')
     a = np.shape(trainData['dcb'])
@@ -205,6 +228,8 @@ if __name__ == '__main__':
     print(test['data'])
     print(test['label'])
 
+    batch = {'data': train['data'][50000],'label': train['label'][50000]}
+
 #    c = lab[:,:,:,1]d
     #print(np.shape(c))
     ##plt.figure(1)
@@ -229,21 +254,40 @@ if __name__ == '__main__':
     # reshape into vectors for easy data loading
     # make sure labels are in same order
 
-    val_monitor = tf.contrib.learn.monitors.ValidationMonitor(test['data'], test['label'], every_n_steps=50)
+    #val_monitor = tf.contrib.learn.monitors.ValidationMonitor(test['data'], test['label'], every_n_steps=50)
+
+    #old classifier used for a fcnn,
+    #classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[50,100,50],
+    #                                           n_classes=5, steps=200, learning_rate=0.05)
+
+    classifier = tf.contrib.learn.TensorFlowLinearClassifier(n_classes=5)
+    #classifier = tf.contrib.learn.TensorFlowEstimator(model_fn=hyperSpec_model, n_classes=5,
+    #                                                 steps=1000, learning_rate=0.05, batch_size=200)
 
 
-    classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[50,100,80,50],
-                                               n_classes=5, steps=20000, learning_rate=0.05)
+    classifier.fit(train['data'], train['label'])#, val_monitor)
+    #mm3
+    # classifier.save('testModel2/')
+
+    y_predicted = classifier.predict(test['data'])
+    score = metrics.accuracy_score(test['label'], classifier.predict(test['data']))
+    print('Accuracy: {0:f}'.format(score))
+
+
+
+    #classifier = tf.contrib.learn.TensorFlowEstimator(model_fn=multiGPU_model, n_classes=5)
 
     #iris = tf.contrib.learn.datasets.load_dataset('iris')
     #print(iris.data)
     #X_train, X_test, y_train, y_test = cross_validation.train_test_split(test['data'], np.uint8(test['label']),
     #                                                                     test_size=0.3, random_state=42)
-    print(np.shape(train['data']))
-    print(np.shape(train['label']))
-    classifier.fit(train['data'], train['label'], val_monitor)
-    classifier.save('testModel1/')
-    score = metrics.accuracy_score(test['label'], classifier.predict(test['data']))
+    #print(np.shape(train['data']))
+    #print(np.shape(train['label']))
+
+    #fit operation for old classifier
+    #classifier.fit(train['data'], train['label'], val_monitor)
+    #classifier.save('testModel2/')
+    #score = metrics.accuracy_score(test['label'], classifier.predict(test['data']))
 
 
-    print('Test Accuracy: {0:f}'.format(score))
+    #print('Test Accuracy: {0:f}'.format(score))
