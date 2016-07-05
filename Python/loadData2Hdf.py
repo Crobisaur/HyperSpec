@@ -16,7 +16,9 @@ import png
 
 def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
     d31 = []
+    d31_norm = []
     d25 = []
+    d25_norm = []
     l25 = []
     l = []
     l3 = []
@@ -55,19 +57,21 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                     lam = bs[1]
                     #d31.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 4298429))
                     d31.append(bs[0].astype(np.float32))
+                    d31_norm.append(bs[0].astype(np.float32)/np.amax(bs[0]))
 
 
                 if len(bs[1]) == 25:
                     print('BSQ is size 25')
                     print(len(bs[1]))
                     lam = bs[1]
-
                     d25.append(bs[0].astype(np.float32))
+                    d25_norm.append(bs[0].astype(np.float32)/np.amax(bs[0]))
+
                     #d25.append(np.reshape(bs[0],[138659,25]).astype(np.float32))
                     # old don't use #d25.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 3466475))
 
-    out = collections.namedtuple('examples',['data31','data25', 'labels', 'lambdas'])
-    o = out(data31=np.dstack(d31), data25=d25, labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
+    out = collections.namedtuple('examples', ['data31', 'data31_norm', 'data25', 'data25_norm', 'labels', 'lambdas'])
+    o = out(data31=d31,data31_norm=d31_norm, data25=np.dstack(d25), data25_norm=np.dstack(d25_norm), labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
     return o
 
 
@@ -118,23 +122,36 @@ def convert_labels(labels,n_classes, debug = False):
         f.close()
     return conv_labels
 
+def getClassMean(data, classNum):
+    kee = np.equal(data['label'],classNum)
+    out = np.mean(data['data']*kee,axis=0)
+    return out
+
+def getAverages(data, numClasses):
+    out = []
+    for i in range(numClasses):
+        a = getClassMean(data, i)
+        out.append(a)
+    return out
 
 
 if __name__ == '__main__':
     #A = loadBSQ()
-    path = '/home/crob/-_PreSortedData_Test_-' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
+    path = '/home/crob/HYPER_SPEC_DATA/-_BluePrism_-/TEST' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
     s = loadBSQ(path)
     print(np.shape(s.data25))
     f = h5py.File("HYPER_SPEC_TEST.h5", "w")
-    f.create_dataset('data', data=s.data31, chunks=(443, 313, 1))
+    f.create_dataset('data', data=s.data25, chunks=(443, 313, 1))
+    f.create_dataset('norm_data', data=s.data25_norm, chunks=(443,313,1))
     f.create_dataset('labels', data=s.labels)
     f.create_dataset('bands', data=s.lambdas)
-    g = np.shape(s.data31)
-    b = np.uint8(g[2] / 31)
+
+    g = np.shape(s.data25)
+    b = np.uint16(g[2] / 25)  #issue with overflow if more than 256 samples.  derp.
     lab = np.reshape(s.labels, [443, 313, 3, b], 'f')
     numExamples = np.shape(lab)
     a = []
-    for j in range(np.uint8(numExamples[3])):
+    for j in range(np.uint16(numExamples[3])):
         a.append(convLabels(lab[:, :, :, j], None))
     f.create_dataset('classLabels', data=np.dstack(a))
     #p = convert_labels(s.labels,2)

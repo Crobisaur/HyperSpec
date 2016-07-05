@@ -158,7 +158,7 @@ def readtiff(filename):
 #main section of convertBsqMulti.py
 
 if __name__ == "__main__":
-    pathName = r'/media/crob/HyperSpec/-_Red_Prism_-/fart'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1  /media/crob/USB30FD/HyperSpec_Data/All bsq static
+    pathName = r'/media/crob/HyperSpec/-_Last_Minute_Data_-'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1  /media/crob/USB30FD/HyperSpec_Data/All bsq static
     os.chdir(pathName)
     #objNames = glob.glob1(pathName,"*.bsq")
     #bsqCount = len(objNames)

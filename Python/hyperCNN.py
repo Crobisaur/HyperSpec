@@ -204,8 +204,8 @@ if __name__ == '__main__':
     trainData = getData(filename='/home/crob/HYPER_SPEC_TRAIN.h5')
     testData = getData(filename='/home/crob/HYPER_SPEC_TEST.h5')
     a = np.shape(trainData['dcb'])
-    b = np.uint8(a[2]/31)
-    print(b / 31)
+    b = np.uint8(a[2]/25)
+    print(b / 25) #This needs fixed for when cubes are 25 or 31 bands
     #lab = np.reshape(testData['labels'], [443,313,3,b],'f')
     #numExamples = np.shape(lab)
     #for j in range(np.uint8(numExamples[3])):
@@ -214,15 +214,15 @@ if __name__ == '__main__':
 
 
     # working on reshaping images into w*h,d format
-    nn = np.reshape(trainData['dcb'],[443,313,31,138],'f')
+    nn = np.reshape(trainData['dcb'],[443,313,25,380],'f')
     #no need for fortran encoding this time
-    c = np.reshape(nn[:,:,:,1],[443*313,31])
+    c = np.reshape(nn[:,:,:,1],[443*313,25])
     print(np.shape(c))
-    d = np.reshape(trainData['classLabels'],[443,313,138],'f')
+    d = np.reshape(trainData['classLabels'],[443,313,380],'f')
     dd = np.reshape(d[:,:,1],[443*313])
 
-    train = shapeData(trainData['dcb'], trainData['classLabels'], 138, 31)
-    test = shapeData(testData['dcb'], testData['classLabels'], 12, 31)
+    train = shapeData(trainData['dcb'], trainData['classLabels'], 380, 25) #138 for old data set
+    test = shapeData(testData['dcb'], testData['classLabels'], 30, 25) #12 for old test set
     print(train['data'])
     print(train['label'])
     print(test['data'])
@@ -248,7 +248,7 @@ if __name__ == '__main__':
     #print data structure for reference
     print(a)
 
-    print(np.reshape(trainData['dcb'], [443,313,31,138],'f'))
+    print(np.reshape(trainData['dcb'], [443,313,25,380],'f'))
     print(trainData['dcb'])
     print(trainData['classLabels'])
     # reshape into vectors for easy data loading
@@ -272,6 +272,11 @@ if __name__ == '__main__':
     y_predicted = classifier.predict(test['data'])
     score = metrics.accuracy_score(test['label'], classifier.predict(test['data']))
     print('Accuracy: {0:f}'.format(score))
+
+    outFile = h5py.File("Results.h5")
+    outFile.create_dataset('linear_predictions', data=np.reshape(y_predicted, [443,313,30]))
+
+    outFile.close()
 
 
 
