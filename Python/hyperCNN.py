@@ -103,8 +103,9 @@ def getData(filename=None):
     dcb = f['data'][:]
     labels = f['labels'][:]
     bands = f['bands'][:]
+    sam = f['sam'][:]
     classLabels = f['classLabels'][:]
-    out = {'dcb': dcb, 'labels': labels, 'lambdas': bands, 'classLabels': classLabels}
+    out = {'dcb': dcb, 'labels': labels, 'lambdas': bands, 'classLabels': classLabels, 'sam': sam}
     return out
 
 
@@ -187,7 +188,7 @@ def multiGPU_model(X, y):
 
 def hyperSpec_model(features, target):
     #target = tf.one_hot(target,depth=5)
-    features = tf.contrib.layers.stack(features, tf.contrib.layers.fully_connected, [31, 50, 10])
+    features = tf.contrib.layers.stack(features, tf.contrib.layers.fully_connected, [25, 50, 10])
     prediction, loss = (
         tf.contrib.learn.models.logistic_regression_zero_init(features, target)
     )
@@ -257,17 +258,17 @@ if __name__ == '__main__':
     #val_monitor = tf.contrib.learn.monitors.ValidationMonitor(test['data'], test['label'], every_n_steps=50)
 
     #old classifier used for a fcnn,
-    #classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[50,100,50],
-    #                                           n_classes=5, steps=200, learning_rate=0.05)
+    classifier = tf.contrib.learn.TensorFlowDNNClassifier(hidden_units=[50,100,50],
+                                               n_classes=5, steps=200, learning_rate=0.05)
 
-    classifier = tf.contrib.learn.TensorFlowLinearClassifier(n_classes=5)
+    #classifier = tf.contrib.learn.TensorFlowLinearClassifier(n_classes=5)
     #classifier = tf.contrib.learn.TensorFlowEstimator(model_fn=hyperSpec_model, n_classes=5,
     #                                                 steps=1000, learning_rate=0.05, batch_size=200)
 
 
     classifier.fit(train['data'], train['label'])#, val_monitor)
     #mm3
-    # classifier.save('testModel2/')
+    classifier.save('testModel2/')
 
     y_predicted = classifier.predict(test['data'])
     score = metrics.accuracy_score(test['label'], classifier.predict(test['data']))

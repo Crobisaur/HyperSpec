@@ -3,7 +3,10 @@ __author__='Christo Robison'
 import numpy as np
 from sklearn import svm
 import h5py
+import time
 
+
+runSAM = False
 
 def kernelSAM(T, R):
     """
@@ -40,6 +43,17 @@ def getClassExamples(data, classNum):
 def getClassMean(data, classNum):
     kee = np.equal(data['label'],classNum)
     out = np.mean(data['data']*kee,axis=0)
+    return out
+
+def getClassExamples(data, classNum):
+    kee = np.equal(data['label'],classNum)
+
+
+    out = (data['data']*kee)
+    out=out[~(out==0).all(1)]
+    ran = np.random.permutation(len(out))
+    ran = ran[:2500]
+    out = out[ran]
     return out
 
 def getAverages(data, numClasses):
@@ -85,16 +99,46 @@ if __name__ == '__main__':
 
     batch = {'data': train['data'][50000], 'label': train['label'][50000]}
 
-    p = getAverages(train, 5)
-    sam_results = []
+    if runSAM is True:
+        p = getAverages(train, 5)
+        sam_results = []
    # for i in range(len(train['data'])):
-    sam_results = sam_Classes(train['data'],p)
-    print(p)
-    print(np.shape(sam_results))
-    f = h5py.File('/home/crob/HYPER_SPEC_TRAIN.h5','r+')
-    f.create_dataset('class_avg',data=p)
-    f.create_dataset('sam',data=sam_results)
-    f.close()
+        sam_results = sam_Classes(train['data'],p)
+        sam_results = np.rot90(np.reshape(np.transpose(sam_results),[443,313,5,-1]),2)
+        print(p)
+        print(np.shape(sam_results))
+        f = h5py.File('/home/crob/HYPER_SPEC_TRAIN.h5','r+')
+        f.create_dataset('class_avg',data=p)
+        f.create_dataset('sam',data=sam_results)
+        f.close()
 
+    TrainSamplesClass0 = getClassExamples(train, 0)
+    TrainLabelsClass0 = np.zeros(2500)
+
+    TrainSamplesClass1 = getClassExamples(train, 1)
+    TrainLabelsClass1 = np.zeros(2500)
+    TrainLabelsClass1.fill(1)
+
+    TrainSamplesClass2 = getClassExamples(train, 2)
+    TrainLabelsClass2 = np.zeros(2500)
+    TrainLabelsClass2.fill(2)
+
+    TrainSamplesClass3 = getClassExamples(train, 3)
+    TrainLabelsClass3 = np.zeros(2500)
+    TrainLabelsClass3.fill(3)
+
+    TrainSamplesClass4 = getClassExamples(train, 4)
+    TrainLabelsClass4 = np.zeros(2500)
+    TrainLabelsClass4.fill(4)
+
+    trainD = np.concatenate([TrainSamplesClass0, TrainSamplesClass1, TrainSamplesClass2, TrainSamplesClass3, TrainSamplesClass4], axis=0)
+    trainL = np.concatenate([TrainLabelsClass0, TrainLabelsClass1, TrainLabelsClass2, TrainLabelsClass3, TrainLabelsClass4], axis=0)
     clf = svm.SVC(cache_size=7000)
-    clf.fit
+    start = time.clock()
+    clf.fit(trainD, trainL)
+    calc_time = time.clock() - start
+    wall_time = time.time() - start
+    print([calc_time, wall_time])
+    #dec_Fx = clf.decision_function(train['data'])
+    pred_results = clf.predict(test['data'][:350000,:])
+    print(pred_results)
