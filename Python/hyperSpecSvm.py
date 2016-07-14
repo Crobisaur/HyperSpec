@@ -70,8 +70,8 @@ def sam_Classes(data, avg):
     return t
 
 if __name__ == '__main__':
-    trainData = getData(filename='/home/crob/HYPER_SPEC_TRAIN.h5')
-    testData = getData(filename='/home/crob/HYPER_SPEC_TEST.h5')
+    trainData = getData(filename='/home/crob/HYPER_SPEC_TRAIN_RED.h5')
+    testData = getData(filename='/home/crob/HYPER_SPEC_TEST_RED.h5')
     a = np.shape(trainData['dcb'])
     b = np.uint8(a[2] / 25)
     print(b / 25)  # This needs fixed for when cubes are 25 or 31 bands
@@ -83,22 +83,22 @@ if __name__ == '__main__':
 
 
     # working on reshaping images into w*h,d format
-    nn = np.reshape(trainData['dcb'], [443, 313, 25, 380], 'f')
+    nn = np.reshape(trainData['dcb'], [443, 313, 31, 138], 'f')
     # no need for fortran encoding this time
-    c = np.reshape(nn[:, :, :, 1], [443 * 313, 25])
+    c = np.reshape(nn[:, :, :, 1], [443 * 313, 31])
     print(np.shape(c))
-    d = np.reshape(trainData['classLabels'], [443, 313, 380], 'f')
+    d = np.reshape(trainData['classLabels'], [443, 313, 138], 'f')
     dd = np.reshape(d[:, :, 1], [443 * 313])
 
-    train = shapeData(trainData['dcb'], trainData['classLabels'], 380, 25)  # 138 for old data set
-    test = shapeData(testData['dcb'], testData['classLabels'], 30, 25)  # 12 for old test set
+    train = shapeData(trainData['dcb'], trainData['classLabels'], 138, 31)  # 138 for old data set
+    test = shapeData(testData['dcb'], testData['classLabels'], 12, 31)  # 12 for old test set
     print(train['data'])
     print(train['label'])
     print(test['data'])
     print(test['label'])
 
     batch = {'data': train['data'][50000], 'label': train['label'][50000]}
-
+    runSAM = True
     if runSAM is True:
         p = getAverages(train, 5)
         sam_results = []
@@ -107,38 +107,38 @@ if __name__ == '__main__':
         sam_results = np.rot90(np.reshape(np.transpose(sam_results),[443,313,5,-1]),2)
         print(p)
         print(np.shape(sam_results))
-        f = h5py.File('/home/crob/HYPER_SPEC_TRAIN.h5','r+')
+        f = h5py.File('/home/crob/HYPER_SPEC_TRAIN_RED.h5','r+')
         f.create_dataset('class_avg',data=p)
         f.create_dataset('sam',data=sam_results)
         f.close()
 
-    TrainSamplesClass0 = getClassExamples(train, 0)
-    TrainLabelsClass0 = np.zeros(2500)
-
-    TrainSamplesClass1 = getClassExamples(train, 1)
-    TrainLabelsClass1 = np.zeros(2500)
-    TrainLabelsClass1.fill(1)
-
-    TrainSamplesClass2 = getClassExamples(train, 2)
-    TrainLabelsClass2 = np.zeros(2500)
-    TrainLabelsClass2.fill(2)
-
-    TrainSamplesClass3 = getClassExamples(train, 3)
-    TrainLabelsClass3 = np.zeros(2500)
-    TrainLabelsClass3.fill(3)
-
-    TrainSamplesClass4 = getClassExamples(train, 4)
-    TrainLabelsClass4 = np.zeros(2500)
-    TrainLabelsClass4.fill(4)
-
-    trainD = np.concatenate([TrainSamplesClass0, TrainSamplesClass1, TrainSamplesClass2, TrainSamplesClass3, TrainSamplesClass4], axis=0)
-    trainL = np.concatenate([TrainLabelsClass0, TrainLabelsClass1, TrainLabelsClass2, TrainLabelsClass3, TrainLabelsClass4], axis=0)
-    clf = svm.SVC(cache_size=7000)
-    start = time.clock()
-    clf.fit(trainD, trainL)
-    calc_time = time.clock() - start
-    wall_time = time.time() - start
-    print([calc_time, wall_time])
-    #dec_Fx = clf.decision_function(train['data'])
-    pred_results = clf.predict(test['data'][:350000,:])
-    print(pred_results)
+    # TrainSamplesClass0 = getClassExamples(train, 0)
+    # TrainLabelsClass0 = np.zeros(2500)
+    #
+    # TrainSamplesClass1 = getClassExamples(train, 1)
+    # TrainLabelsClass1 = np.zeros(2500)
+    # TrainLabelsClass1.fill(1)
+    #
+    # TrainSamplesClass2 = getClassExamples(train, 2)
+    # TrainLabelsClass2 = np.zeros(2500)
+    # TrainLabelsClass2.fill(2)
+    #
+    # TrainSamplesClass3 = getClassExamples(train, 3)
+    # TrainLabelsClass3 = np.zeros(2500)
+    # TrainLabelsClass3.fill(3)
+    #
+    # TrainSamplesClass4 = getClassExamples(train, 4)
+    # TrainLabelsClass4 = np.zeros(2500)
+    # TrainLabelsClass4.fill(4)
+    #
+    # trainD = np.concatenate([TrainSamplesClass0, TrainSamplesClass1, TrainSamplesClass2, TrainSamplesClass3, TrainSamplesClass4], axis=0)
+    # trainL = np.concatenate([TrainLabelsClass0, TrainLabelsClass1, TrainLabelsClass2, TrainLabelsClass3, TrainLabelsClass4], axis=0)
+    # clf = svm.SVC(cache_size=7000)
+    # start = time.clock()
+    # clf.fit(trainD, trainL)
+    # calc_time = time.clock() - start
+    # wall_time = time.time() - start
+    # print([calc_time, wall_time])
+    # #dec_Fx = clf.decision_function(train['data'])
+    # pred_results = clf.predict(test['data'][:350000,:])
+    # print(pred_results)

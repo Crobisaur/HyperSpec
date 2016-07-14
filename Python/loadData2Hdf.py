@@ -71,7 +71,7 @@ def loadBSQ(path = '/home/crob/HyperSpec_Data/WBC v ALL/WBC25', debug=False):
                     # old don't use #d25.append(np.reshape(np.transpose(bs[0], (1, 2, 0)), 3466475))
 
     out = collections.namedtuple('examples', ['data31', 'data31_norm', 'data25', 'data25_norm', 'labels', 'lambdas'])
-    o = out(data31=d31,data31_norm=d31_norm, data25=np.dstack(d25), data25_norm=np.dstack(d25_norm), labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
+    o = out(data31=np.dstack(d31),data31_norm=np.dstack(d31_norm), data25=d25, data25_norm=d25_norm, labels=np.dstack(l), lambdas=lam)  #np.vstack(d25), labels=np.hstack(l)
     return o
 
 
@@ -137,17 +137,17 @@ def getAverages(data, numClasses):
 
 if __name__ == '__main__':
     #A = loadBSQ()
-    path = '/home/crob/HYPER_SPEC_DATA/-_BluePrism_-/TEST' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
+    path = '/home/crob/-_PreSortedData_Train_-' #oldpath=/HyperSpec_Data/WBC v ALL/WBC25
     s = loadBSQ(path)
     print(np.shape(s.data25))
-    f = h5py.File("HYPER_SPEC_TEST.h5", "w")
-    f.create_dataset('data', data=s.data25, chunks=(443, 313, 1))
-    f.create_dataset('norm_data', data=s.data25_norm, chunks=(443,313,1))
+    f = h5py.File("HYPER_SPEC_TRAIN_RED.h5", "w")
+    f.create_dataset('data', data=s.data31, chunks=(443, 313, 1))
+    f.create_dataset('norm_data', data=s.data31_norm, chunks=(443,313,1))
     f.create_dataset('labels', data=s.labels)
     f.create_dataset('bands', data=s.lambdas)
 
-    g = np.shape(s.data25)
-    b = np.uint16(g[2] / 25)  #issue with overflow if more than 256 samples.  derp.
+    g = np.shape(s.data31)
+    b = np.uint16(g[2] / 31)  #issue with overflow if more than 256 samples.  derp.
     lab = np.reshape(s.labels, [443, 313, 3, b], 'f')
     numExamples = np.shape(lab)
     a = []
