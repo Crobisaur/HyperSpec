@@ -98,11 +98,11 @@ if __name__ == '__main__':
     print(test['label'])
 
     batch = {'data': train['data'][50000], 'label': train['label'][50000]}
-    runSAM = True
+    #runSAM = True
     if runSAM is True:
         p = getAverages(train, 5)
         sam_results = []
-   # for i in range(len(train['data'])):
+       # for i in range(len(train['data'])):
         sam_results = sam_Classes(train['data'],p)
         sam_results = np.rot90(np.reshape(np.transpose(sam_results),[443,313,5,-1]),2)
         print(p)
@@ -112,33 +112,33 @@ if __name__ == '__main__':
         f.create_dataset('sam',data=sam_results)
         f.close()
 
-    # TrainSamplesClass0 = getClassExamples(train, 0)
-    # TrainLabelsClass0 = np.zeros(2500)
-    #
-    # TrainSamplesClass1 = getClassExamples(train, 1)
-    # TrainLabelsClass1 = np.zeros(2500)
-    # TrainLabelsClass1.fill(1)
-    #
-    # TrainSamplesClass2 = getClassExamples(train, 2)
-    # TrainLabelsClass2 = np.zeros(2500)
-    # TrainLabelsClass2.fill(2)
-    #
-    # TrainSamplesClass3 = getClassExamples(train, 3)
-    # TrainLabelsClass3 = np.zeros(2500)
-    # TrainLabelsClass3.fill(3)
-    #
-    # TrainSamplesClass4 = getClassExamples(train, 4)
-    # TrainLabelsClass4 = np.zeros(2500)
-    # TrainLabelsClass4.fill(4)
-    #
-    # trainD = np.concatenate([TrainSamplesClass0, TrainSamplesClass1, TrainSamplesClass2, TrainSamplesClass3, TrainSamplesClass4], axis=0)
-    # trainL = np.concatenate([TrainLabelsClass0, TrainLabelsClass1, TrainLabelsClass2, TrainLabelsClass3, TrainLabelsClass4], axis=0)
-    # clf = svm.SVC(cache_size=7000)
-    # start = time.clock()
-    # clf.fit(trainD, trainL)
-    # calc_time = time.clock() - start
-    # wall_time = time.time() - start
-    # print([calc_time, wall_time])
-    # #dec_Fx = clf.decision_function(train['data'])
-    # pred_results = clf.predict(test['data'][:350000,:])
-    # print(pred_results)
+     TrainSamplesClass0 = getClassExamples(train, 0)
+     TrainLabelsClass0 = np.zeros(2500)
+
+     TrainSamplesClass1 = getClassExamples(train, 1)
+     TrainLabelsClass1 = np.zeros(2500)
+     TrainLabelsClass1.fill(1)
+
+     TrainSamplesClass2 = getClassExamples(train, 2)
+     TrainLabelsClass2 = np.zeros(2500)
+     TrainLabelsClass2.fill(2)
+
+     TrainSamplesClass3 = getClassExamples(train, 3)
+     TrainLabelsClass3 = np.zeros(2500)
+     TrainLabelsClass3.fill(3)
+
+     TrainSamplesClass4 = getClassExamples(train, 4)
+     TrainLabelsClass4 = np.zeros(2500)
+     TrainLabelsClass4.fill(4)
+
+     trainD = np.concatenate([TrainSamplesClass0, TrainSamplesClass1, TrainSamplesClass2, TrainSamplesClass3, TrainSamplesClass4], axis=0)
+     trainL = np.concatenate([TrainLabelsClass0, TrainLabelsClass1, TrainLabelsClass2, TrainLabelsClass3, TrainLabelsClass4], axis=0)
+     clf = svm.SVC(cache_size=7000)
+     start = time.clock()
+     clf.fit(trainD, trainL)
+     calc_time = time.clock() - start
+     wall_time = time.time() - start
+     print([calc_time, wall_time])
+     #dec_Fx = clf.decision_function(train['data'])
+     pred_results = clf.predict(test['data'][:350000,:])
+     print(pred_results)
