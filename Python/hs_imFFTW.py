@@ -29,6 +29,18 @@ def getData(filename=None):
     f.close()
     return out
 
+    
+def im2png(img, filename):
+    f = open(filename, 'wb')
+    w = png.Writer(313, 443, greyscale=True, bitdepth=8)
+    if img.dtype is not np.int8:
+        if (np.amin(img) < 0): img = img - np.amin(img)
+        img = np.float32(img) * (2.0**7 - 1.0)/ np.amax(img)
+        img = np.int8(img)
+    #img_w = exposure.rescale_intensity(img, out_range='int8')
+    w.write(f, img)
+    f.close()
+        
 
 def imSave(img, filename, range='float'):
     f = open(filename,'wb')
@@ -84,7 +96,7 @@ if __name__ == '__main__':
 
     mask = np.ones((443,313), dtype='float32')
     mask[20:420, 155:157] = 0
-    mask[180:262, :] = 1
+    mask[160:282, :] = 1
     print(mask)
     mask_img = imshow(mask)
     #imSave(mask_img,'Mask_img.png')
@@ -99,8 +111,19 @@ if __name__ == '__main__':
     print(img_fft.shape)
     mask_ifft = np.multiply(img_fft, ft.ifftshift(mask))
     img_FFTout = np.log2(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
-    imSave(img_FFTout, "OUTPUT_FFT.png")
-    mask_out = imshow(np.log2(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)))
+    #imSave(img_FFTout, "OUTPUT_FFT.png")
+    img_p = pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)
+    mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
+    #mask_hist = imshow(np.histogram(img_p.real))
+    
+    plt.hist(img_p.real, bins='auto')
+    plt.title("Histogram of image")
+    plt.show()
+    
+    
+    img_o = img_p.real
+    im2png(img_o, "output_image.png")
+    imgg = imshow(img_o)
     #plt.savefig('mask_FFT')
     fft_real = mask_ifft.real
     fft_imag = mask_ifft.imag
