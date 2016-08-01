@@ -40,13 +40,15 @@ def shapeData(data, labels, numExamples, numBands, altDims = None):
     return out
 
 if __name__ == '__main__':
-    trainData = getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST.h5')
+    trainData = getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
     testData = getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
     print(np.shape(trainData['dcb']))
-    for i in range(np.shape(trainData['dcb'])[2]):
-        im = exposure.rescale_intensity(trainData['dcb'][:,:,i], out_range='float')
-        im = img_as_uint(im)
-        io.imsave((r'HYPER_SPEC_TEST\band_image_' + str(i) + '.png'), im)
+    debug = False
+    if debug is True:
+        for i in range(np.shape(trainData['dcb'])[2]):
+            im = exposure.rescale_intensity(trainData['dcb'][:,:,i], out_range='float')
+            im = img_as_uint(im)
+            io.imsave((r'HYPER_SPEC_TEST\band_image_' + str(i) + '.png'), im)
 
         #pf = open(('band_image_' + str(i) + '.png'), 'wb')
         #w = png.Writer(width=313, height=443, bitdepth=16, greyscale=True)
@@ -56,7 +58,7 @@ if __name__ == '__main__':
     ### Unsupervised Classification
     #img = trainData['dcb'][:,:,1625:1651]
     #(m, c) = kmeans(img, 6, 300)
-    img = trainData['dcb'][:,:,341:372]
+    img = trainData['dcb'][:,:,343:370]
     (m, c) = kmeans(img, 6, 300)
     fig1 = plt.figure(1)
     fig1.hold(True)

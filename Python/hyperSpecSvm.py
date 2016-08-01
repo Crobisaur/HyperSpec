@@ -102,7 +102,7 @@ if __name__ == '__main__':
     if runSAM is True:
         p = getAverages(train, 5)
         sam_results = []
-       # for i in range(len(train['data'])):
+        # for i in range(len(train['data'])):
         sam_results = sam_Classes(train['data'],p)
         sam_results = np.rot90(np.reshape(np.transpose(sam_results),[443,313,5,-1]),2)
         print(p)
