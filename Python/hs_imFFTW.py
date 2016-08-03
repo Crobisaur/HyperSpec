@@ -7,8 +7,10 @@ import numpy as np
 from scipy import fftpack as ft
 import h5py
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('qt4')
+#%matplotlib inline
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 import time
 from skimage import io, exposure, img_as_uint, img_as_float
 import png
@@ -115,7 +117,8 @@ if __name__ == '__main__':
     img_p = pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)
     mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
     #mask_hist = imshow(np.histogram(img_p.real))
-    
+
+    plt.clf()
     plt.hist(img_p.real, bins='auto')
     plt.title("Histogram of image")
     plt.show()
