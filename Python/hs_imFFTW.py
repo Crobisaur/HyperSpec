@@ -4,6 +4,7 @@ __author__ = 'Christo Robison'
 
 from spectral import *
 import numpy as np
+import pyqtgraph as pg
 from scipy import fftpack as ft
 import h5py
 import matplotlib
@@ -16,6 +17,12 @@ from skimage import io, exposure, img_as_uint, img_as_float
 import png
 #io.use_plugin('freeimage')
 import pyfftw
+
+x = np.random.normal(size=1000)
+y = np.random.normal(size=1000)
+
+pg.plot(x, y, symbol='o')
+pg.QtGui.QApplication.exec_()
 
 show_full_out = False
 if show_full_out: np.set_printoptions(threshold=np.nan)
@@ -63,6 +70,9 @@ def shapeData(data, labels, numExamples, numBands, altDims = None):
     out = {'data': dataR, 'label': labelL}
     return out
 
+def dispDCB(dcb):
+    dcb = np.swapaxes(dcb, 2, 0)
+
 
 if __name__ == '__main__':
     trainData = getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
@@ -83,8 +93,22 @@ if __name__ == '__main__':
     ### Unsupervised Classification
     # img = trainData['dcb'][:,:,1625:1651]
     # (m, c) = kmeans(img, 6, 300)
+
+
+    ##### segment off each section, simplify repetitive code####
+
+    ##### Pull out a data cube and display it in a pyqtgraph object#####
+
+
     img = trainData['dcb'][:, :, 343:370]
-    #(m, c) = kmeans(img, 6, 300)
+    img1 = np.swapaxes(img, 2, 0)
+    imv = pg.ImageView()
+    imv.show()
+    imv.setImage(img1)
+    # pg.image(img)
+    pg.QtGui.QApplication.exec_()
+
+    # (m, c) = kmeans(img, 6, 300)
     img_file = open('fftMask_new.png', 'wb')
     img_w = png.Writer(313, 443, greyscale=True, bitdepth=16)
     img_to_write = exposure.rescale_intensity(img[:, :, 3], out_range='float')
@@ -92,36 +116,48 @@ if __name__ == '__main__':
     img_w.write(img_file, img_to_write)
     img_file.close()
 
-    #png.from_array(img[:, :, 3]).save("fftMask.png")
+    # png.from_array(img[:, :, 3]).save("fftMask.png")
     pre_img = imshow(img[:, :, 3])
-    #plt.savefig('fft3_pre')
+    # plt.savefig('fft3_pre')
 
-    mask = np.ones((443,313), dtype='float32')
-    mask[20:420, 155:157] = 0
-    mask[160:282, :] = 1
+    mask = np.ones((443, 313), dtype='float32')
+    mask[:, 155:157] = 0  #10:430
+    mask[180:262, :] = 1
     print(mask)
     mask_img = imshow(mask)
-    #imSave(mask_img,'Mask_img.png')
-    #imSave(mask, "Mask_img.png", out_range=np.float32)
-    #plt.savefig('fftMask')
+    # imSave(mask_img,'Mask_img.png')
+    # imSave(mask, "Mask_img.png", out_range=np.float32)
+    # plt.savefig('fftMask')
 
 
+    #for i in range(np.shape(img)[2]):
 
-    temp_img = pyfftw.n_byte_align(img[:, :, 3], 16, dtype='complex128')
+    #    print(i)
+
+    temp_img = pyfftw.n_byte_align(img, 16, dtype='complex128')
     img_fft = pyfftw.interfaces.numpy_fft.fftn(temp_img)
     print(img_fft.dtype)
     print(img_fft.shape)
-    mask_ifft = np.multiply(img_fft, ft.ifftshift(mask))
+    #if projecting mask along data, need to make sure last two dimensions match  ex 4Lx3Wx10H * 3Wx10H = 4Lx3Wx10H
+
+    mask_ifft = np.multiply(np.rollaxis(img_fft,2,0), ft.ifftshift(mask))
+    print("Shape of FFT: " + str(np.shape(mask_ifft)))
+    #mask_ifft = np.rollaxis(mask_ifft,0,3)
+    print("Shape of FFT: " + str(np.shape(mask_ifft)))
+
     img_FFTout = np.log2(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
-    #imSave(img_FFTout, "OUTPUT_FFT.png")
+    print("Shape of FFT_Out: " + str(np.shape(img_FFTout)))
+    # imSave(img_FFTout, "OUTPUT_FFT.png")
     img_p = pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)
     mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
-    #mask_hist = imshow(np.histogram(img_p.real))
+    # mask_hist = imshow(np.histogram(img_p.real))
+    pg.image(img_p)
+    pg.QtGui.QApplication.exec_()
 
-    plt.clf()
-    plt.hist(img_p.real, bins='auto')
-    plt.title("Histogram of image")
-    plt.show()
+    #plt.clf()
+    #plt.hist(img_p.real, bins='auto')
+    #plt.title("Histogram of image")
+    #plt.show()
     
     
     img_o = img_p.real
