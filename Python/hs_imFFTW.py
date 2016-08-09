@@ -4,6 +4,7 @@ __author__ = 'Christo Robison'
 
 from spectral import *
 import numpy as np
+from PyQt4 import QtGui
 import pyqtgraph as pg
 from scipy import fftpack as ft
 import h5py
@@ -75,6 +76,20 @@ def dispDCB(dcb):
 
 
 if __name__ == '__main__':
+    # initialize Qt, needed once per application
+    app = QtGui.QApplication([])
+    # Define widget to hold outputs
+    widg = QtGui.QWidget()
+    ploot = pg.PlotWidget()
+    layout = QtGui.QGridLayout()
+    widg.setLayout(layout)
+    # add widgets to layout
+    layout.addWidget(ploot, 0, 1, 3, 1)
+
+    widg.show()
+    #app.exec_()
+
+
     trainData = getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
     testData = getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
     print(np.shape(trainData['dcb']))
@@ -105,8 +120,11 @@ if __name__ == '__main__':
     imv = pg.ImageView()
     imv.show()
     imv.setImage(img1)
+    layout.addWidget(imv, 0, 1, 3, 1)
+    widg.show()
+    app.exec_()
     # pg.image(img)
-    pg.QtGui.QApplication.exec_()
+    #pg.QtGui.QApplication.exec_()
 
     # (m, c) = kmeans(img, 6, 300)
     img_file = open('fftMask_new.png', 'wb')
@@ -117,7 +135,12 @@ if __name__ == '__main__':
     img_file.close()
 
     # png.from_array(img[:, :, 3]).save("fftMask.png")
-    pre_img = imshow(img[:, :, 3])
+    imv1 = pg.ImageView()
+    imv.show()
+    imv.setImage(img[:,:,3])
+    #pre_img = imshow(img[:, :, 3])
+
+    pg.QtGui.QApplication.exec_()
     # plt.savefig('fft3_pre')
 
     mask = np.ones((443, 313), dtype='float32')
@@ -125,6 +148,7 @@ if __name__ == '__main__':
     mask[180:262, :] = 1
     print(mask)
     mask_img = imshow(mask)
+    pg.QtGui.QApplication.exec_()
     # imSave(mask_img,'Mask_img.png')
     # imSave(mask, "Mask_img.png", out_range=np.float32)
     # plt.savefig('fftMask')
@@ -150,6 +174,7 @@ if __name__ == '__main__':
     # imSave(img_FFTout, "OUTPUT_FFT.png")
     img_p = pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)
     mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
+    pg.QtGui.QApplication.exec_()
     # mask_hist = imshow(np.histogram(img_p.real))
     pg.image(img_p)
     pg.QtGui.QApplication.exec_()
