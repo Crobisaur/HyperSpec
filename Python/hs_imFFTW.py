@@ -18,12 +18,13 @@ from skimage import io, exposure, img_as_uint, img_as_float
 import png
 #io.use_plugin('freeimage')
 import pyfftw
+import HyperSpecGui
 
-x = np.random.normal(size=1000)
-y = np.random.normal(size=1000)
+#x = np.random.normal(size=1000)
+#y = np.random.normal(size=1000)
 
-pg.plot(x, y, symbol='o')
-pg.QtGui.QApplication.exec_()
+#pg.plot(x, y, symbol='o')
+#pg.QtGui.QApplication.exec_()
 
 show_full_out = False
 if show_full_out: np.set_printoptions(threshold=np.nan)
@@ -71,6 +72,44 @@ def shapeData(data, labels, numExamples, numBands, altDims = None):
     out = {'data': dataR, 'label': labelL}
     return out
 
+
+def hsfft(dcb):
+    '''Takes in a datacube and 2d mask'''
+    temp_dcb = pyfftw.n_byte_align(dcb, 16, dtype='complex128')
+    dcb_fft = pyfftw.interfaces.numpy_fft.fftn(temp_dcb)
+    return dcb_fft
+
+
+def genMask(h=443, w=313, offset=41, debug=False):
+    '''Generates a fft mask to eliminate HS system artifacts from image'''
+    mask = np.ones((h, w), dtype='float32')
+    mask[:, (w/2):((w+2//2)//2)] = 0
+    mask[((h/2)-offset):((h/2)+offset), :] = 1
+    if debug: print(mask)
+    return mask
+
+
+def applyMask(dcb_fft, mask=genMask, debug=False):
+    '''Applies mask to spatial information of each band in datacube.'''
+    masked_fft = np.multiply(np.rollaxis(dcb_fft, 2, 0,), ft.ifftshift(mask))
+    if debug: print("Shape of FFT:" + str(np.shape(masked_fft)))
+    return masked_fft
+
+
+def hsifft(dcb_fft, debug=False):
+    '''Performs inverse fourier transform on datacube'''
+    dcb_out = pyfftw.interfaces.numpy_fft.ifftn(dcb_fft)
+    if debug: print("Shape of iFFT:" + str(np.shape(dcb_out)))
+    return dcb_out
+
+
+def dcbFilter(dcb, h=443, w=313, offset=41, debug=False):
+    '''A helper function to simplify masking process and reduce confusion'''
+    masked_fft = applyMask(hsfft(dcb), genMask(h, w, offset, debug))
+    dcb_out = hsifft(masked_fft, debug)
+    return dcb_out
+
+
 def dispDCB(dcb):
     dcb = np.swapaxes(dcb, 2, 0)
 
@@ -79,14 +118,21 @@ if __name__ == '__main__':
     # initialize Qt, needed once per application
     app = QtGui.QApplication([])
     # Define widget to hold outputs
-    widg = QtGui.QWidget()
-    ploot = pg.PlotWidget()
-    layout = QtGui.QGridLayout()
-    widg.setLayout(layout)
-    # add widgets to layout
-    layout.addWidget(ploot, 0, 1, 3, 1)
+    MainWindow = QtGui.QMainWindow()
+    MainWindow.setWindowTitle('HyperSpec: Test')
+    ui = HyperSpecGui.Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
 
-    widg.show()
+
+    #widg = QtGui.QWidget()
+    #ploot = pg.PlotWidget()
+    #layout = QtGui.QGridLayout()
+    #widg.setLayout(layout)
+    # add widgets to layout
+    #layout.addWidget(ploot, 0, 1, 3, 1)
+
+    #widg.show()
     #app.exec_()
 
 
@@ -117,14 +163,9 @@ if __name__ == '__main__':
 
     img = trainData['dcb'][:, :, 343:370]
     img1 = np.swapaxes(img, 2, 0)
-    imv = pg.ImageView()
-    imv.show()
-    imv.setImage(img1)
-    layout.addWidget(imv, 0, 1, 3, 1)
-    widg.show()
-    app.exec_()
-    # pg.image(img)
-    #pg.QtGui.QApplication.exec_()
+
+    ui.ImageView1.setImage(img1)
+
 
     # (m, c) = kmeans(img, 6, 300)
     img_file = open('fftMask_new.png', 'wb')
@@ -135,20 +176,24 @@ if __name__ == '__main__':
     img_file.close()
 
     # png.from_array(img[:, :, 3]).save("fftMask.png")
-    imv1 = pg.ImageView()
-    imv.show()
-    imv.setImage(img[:,:,3])
+    #imv1 = pg.ImageView()
+    #imv.show()
+    #imv.setImage(img[:,:,3])
     #pre_img = imshow(img[:, :, 3])
+    ui.ImageView2.setImage(img[:, :, 3])
 
-    pg.QtGui.QApplication.exec_()
+    #pg.QtGui.QApplication.exec_()
     # plt.savefig('fft3_pre')
 
     mask = np.ones((443, 313), dtype='float32')
     mask[:, 155:157] = 0  #10:430
     mask[180:262, :] = 1
     print(mask)
-    mask_img = imshow(mask)
-    pg.QtGui.QApplication.exec_()
+
+
+    #mask_img = imshow(mask)
+    ui.ImageView4.setImage(mask)
+    #pg.QtGui.QApplication.exec_()
     # imSave(mask_img,'Mask_img.png')
     # imSave(mask, "Mask_img.png", out_range=np.float32)
     # plt.savefig('fftMask')
@@ -173,11 +218,12 @@ if __name__ == '__main__':
     print("Shape of FFT_Out: " + str(np.shape(img_FFTout)))
     # imSave(img_FFTout, "OUTPUT_FFT.png")
     img_p = pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)
-    mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
-    pg.QtGui.QApplication.exec_()
+    ui.ImageView3.setImage(img_p)
+    #mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
+    #pg.QtGui.QApplication.exec_()
     # mask_hist = imshow(np.histogram(img_p.real))
-    pg.image(img_p)
-    pg.QtGui.QApplication.exec_()
+    #pg.image(img_p)
+    #pg.QtGui.QApplication.exec_()
 
     #plt.clf()
     #plt.hist(img_p.real, bins='auto')
@@ -185,23 +231,25 @@ if __name__ == '__main__':
     #plt.show()
     
     
-    img_o = img_p.real
-    im2png(img_o, "output_image.png")
-    imgg = imshow(img_o)
+    #img_o = img_p.real
+    #im2png(img_o, "output_image.png")
+    #imgg = imshow(img_o)
     #plt.savefig('mask_FFT')
-    fft_real = mask_ifft.real
-    fft_imag = mask_ifft.imag
-    print(fft_real.dtype)
-    print(fft_imag)
+    #fft_real = mask_ifft.real
+    #fft_imag = mask_ifft.imag
+    #print(fft_real.dtype)
+    #print(fft_imag)
 
 
     #png.from_array(np.array(fft_real, dtype=np.uint16),'L').save("Mask_FFT_real.png")
-    imSave(fft_real, "Mask_FFT_real.png", range='float')
-    imSave(fft_imag, "Mask_FFT_imag.png", range='float')
+    #imSave(fft_real, "Mask_FFT_real.png", range='float')
+    #imSave(fft_imag, "Mask_FFT_imag.png", range='float')
 
-    imSave(abs(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)), "Mask_fft_1.png", out_range=np.uint8)
+    #imSave(abs(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)), "Mask_fft_1.png", out_range=np.uint8)
     #png.from_array(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)).save("mask_FFT.png")
-    real_fft = np.abs(np.log2(img_fft))
-    out_img = imshow(ft.fftshift(real_fft))
-    png.from_array(ft.fftshift(real_fft)).save("fft3.png")
+    #real_fft = np.abs(np.log2(img_fft))
+    #out_img = imshow(ft.fftshift(real_fft))
+    #png.from_array(ft.fftshift(real_fft)).save("fft3.png")
     #plt.savefig('fft3')
+
+    sys.exit(app.exec_())
