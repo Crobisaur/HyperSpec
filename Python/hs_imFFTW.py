@@ -6,6 +6,7 @@ from spectral import *
 import numpy as np
 from PyQt4 import QtGui
 import pyqtgraph as pg
+from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
 from scipy import fftpack as ft
 import h5py
 import matplotlib
@@ -219,6 +220,19 @@ if __name__ == '__main__':
     # imSave(img_FFTout, "OUTPUT_FFT.png")
     img_p = pyfftw.interfaces.numpy_fft.ifftn(mask_ifft)
     ui.ImageView3.setImage(img_p)
+
+
+    #Start implementing parts from final_tests.py
+    (m, c) = kmeans(img_p.real, 6, 300)
+    mw = pg.widgets.MatplotlibWidget.MatplotlibWidget()
+    subplot = mw.getFigure().add_subplot(111)
+    for i in range(c.shape[0]):
+        subplot.plot(c[i])
+    mw.draw()
+
+
+
+
     #mask_out = imshow(pyfftw.interfaces.numpy_fft.ifftn(mask_ifft))
     #pg.QtGui.QApplication.exec_()
     # mask_hist = imshow(np.histogram(img_p.real))

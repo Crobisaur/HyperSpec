@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-#Default encoding from pyuic4 is broken, need to manually change to utf-8
 
-# Form implementation generated from reading ui file 'D:\-_Google_Drive_-\-_Thesis_-\GUIs\HyperSpec\Version_1_0\HyperSpec_1_0.ui'
+# Form implementation generated from reading ui file 'D:\-_Google_Drive_-\-_Thesis_-\GUIs\HyperSpec\Version_1_1\HyperSpec_1_3.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -23,53 +22,75 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class Ui_HyperSpec_MainWindow(object):
-    def setupUi(self, HyperSpec_MainWindow):
-        HyperSpec_MainWindow.setObjectName(_fromUtf8("HyperSpec_MainWindow"))
-        HyperSpec_MainWindow.resize(800, 752)
-        self.centralwidget = QtGui.QWidget(HyperSpec_MainWindow)
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName(_fromUtf8("MainWindow"))
+        MainWindow.resize(1363, 949)
+        MainWindow.setFocusPolicy(QtCore.Qt.NoFocus)
+        MainWindow.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
+        MainWindow.setStyleSheet(_fromUtf8("background-color: rgb(60,60,60); QMenuBar{ background-color: rgb(60,60,60)} QMenuBar::Item{background: transparent}; QMenu::Item{background-color: rgb(60,60,60)}; QPushButton{background-color: rgb(A4,A4,A4)};\n"
+""))
+        MainWindow.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.USVirginIslands))
+        self.centralwidget = QtGui.QWidget(MainWindow)
+        self.centralwidget.setStyleSheet(_fromUtf8("background-color: rgb(60,60,60)"))
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
-        self.plot1 = QtGui.QWidget(self.centralwidget)
-        self.plot1.setGeometry(QtCore.QRect(10, 10, 381, 341))
-        self.plot1.setObjectName(_fromUtf8("plot1"))
-        self.plot2 = QtGui.QWidget(self.centralwidget)
-        self.plot2.setGeometry(QtCore.QRect(400, 10, 391, 341))
-        self.plot2.setObjectName(_fromUtf8("plot2"))
-        self.plot3 = QtGui.QWidget(self.centralwidget)
-        self.plot3.setGeometry(QtCore.QRect(10, 360, 381, 341))
-        self.plot3.setObjectName(_fromUtf8("plot3"))
-        self.plot4 = QtGui.QWidget(self.centralwidget)
-        self.plot4.setGeometry(QtCore.QRect(400, 360, 391, 341))
-        self.plot4.setObjectName(_fromUtf8("plot4"))
-        HyperSpec_MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtGui.QMenuBar(HyperSpec_MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
+        self.pltView0 = PlotWidget(self.centralwidget)
+        self.pltView0.setGeometry(QtCore.QRect(40, 30, 401, 451))
+        self.pltView0.setObjectName(_fromUtf8("pltView0"))
+        self.pltView1 = PlotWidget(self.centralwidget)
+        self.pltView1.setGeometry(QtCore.QRect(460, 30, 401, 451))
+        self.pltView1.setObjectName(_fromUtf8("pltView1"))
+        self.ImageView1 = ImageView(self.centralwidget)
+        self.ImageView1.setGeometry(QtCore.QRect(40, 500, 611, 361))
+        self.ImageView1.setObjectName(_fromUtf8("ImageView1"))
+        self.ImageView2 = ImageView(self.centralwidget)
+        self.ImageView2.setGeometry(QtCore.QRect(670, 500, 651, 361))
+        self.ImageView2.setObjectName(_fromUtf8("ImageView2"))
+        self.updateBtn = QtGui.QPushButton(self.centralwidget)
+        self.updateBtn.setGeometry(QtCore.QRect(40, 870, 75, 23))
+        self.updateBtn.setStyleSheet(_fromUtf8("background-color: rgb(117, 117, 117);"))
+        self.updateBtn.setObjectName(_fromUtf8("updateBtn"))
+        self.pltView2 = PlotWidget(self.centralwidget)
+        self.pltView2.setGeometry(QtCore.QRect(880, 30, 441, 451))
+        self.pltView2.setObjectName(_fromUtf8("pltView2"))
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtGui.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1363, 21))
+        font = QtGui.QFont()
+        font.setStyleStrategy(QtGui.QFont.PreferAntialias)
+        self.menubar.setFont(font)
+        self.menubar.setAutoFillBackground(False)
+        self.menubar.setStyleSheet(_fromUtf8(""))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menuFile = QtGui.QMenu(self.menubar)
+        self.menuFile.setStyleSheet(_fromUtf8("background-color: rgb(97, 97, 97);"))
         self.menuFile.setObjectName(_fromUtf8("menuFile"))
-        HyperSpec_MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtGui.QStatusBar(HyperSpec_MainWindow)
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtGui.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
-        HyperSpec_MainWindow.setStatusBar(self.statusbar)
-        self.actionExit = QtGui.QAction(HyperSpec_MainWindow)
+        MainWindow.setStatusBar(self.statusbar)
+        self.actionExit = QtGui.QAction(MainWindow)
         self.actionExit.setObjectName(_fromUtf8("actionExit"))
         self.menuFile.addAction(self.actionExit)
         self.menubar.addAction(self.menuFile.menuAction())
 
-        self.retranslateUi(HyperSpec_MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(HyperSpec_MainWindow)
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def retranslateUi(self, HyperSpec_MainWindow):
-        HyperSpec_MainWindow.setWindowTitle(_translate("HyperSpec_MainWindow", "HyperSpec", None))
-        self.menuFile.setTitle(_translate("HyperSpec_MainWindow", "File", None))
-        self.actionExit.setText(_translate("HyperSpec_MainWindow", "Exit", None))
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(_translate("MainWindow", "HyperSpec", None))
+        self.updateBtn.setText(_translate("MainWindow", "Update", None))
+        self.menuFile.setTitle(_translate("MainWindow", "File", None))
+        self.actionExit.setText(_translate("MainWindow", "Exit", None))
 
+from pyqtgraph import ImageView, PlotWidget
 
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
-    HyperSpec_MainWindow = QtGui.QMainWindow()
-    ui = Ui_HyperSpec_MainWindow()
-    ui.setupUi(HyperSpec_MainWindow)
-    HyperSpec_MainWindow.show()
+    MainWindow = QtGui.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
     sys.exit(app.exec_())
+
