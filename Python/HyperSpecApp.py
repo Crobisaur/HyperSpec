@@ -12,9 +12,8 @@ import time
 import pyqtgraph
 import hs_imFFTW as hs
 from spectral import *
+spectral.settings.WX_GL_DEPTH_SIZE = 16
 
-CHUNKSZ = 1024
-FS = 44100 #Hz
 
 class HyperSpecApp(QtGui.QMainWindow, HyperSpecGui.Ui_MainWindow):
     def __init__(self, parent=None):
@@ -85,20 +84,20 @@ def adjustLabels(dcb, bkgnd=0.0, unknown=4.0):
     dcb[dcb==5.0] = 4.0
     return dcb
 
-def runSpectral(dcb, gt):
+def runSpectral(dcb, gt, title = 'dcb'):
     (classes, gmlc, clmap) = runGauss(dcb, gt)
     (gtresults, gtErrors) = genResults(clmap, gt)
-    displayPlots(clmap, gt, gtresults, gtErrors)
+    displayPlots(clmap, gt, gtresults, gtErrors, (title+" Gaussian Classifer"))
     return (gtresults, gtErrors)
 
-def runPCA(dcb, gt):
+def runPCA(dcb, gt, title = 'dcb'):
     pc = principal_components(dcb)
     pc_0999 = pc.reduce(fraction=0.999)
     img_pc = pc_0999.transform(dcb)
     (classes, gmlc, clmap) = runGauss(img_pc, gt)
     (gtresults, gtErrors) = genResults(clmap, gt)
-    displayPlots(clmap, gt, gtresults, gtErrors)
-    return (gtresults, gtErrors)
+    displayPlots(clmap, gt, gtresults, gtErrors, (title+" PCA Gaussian Classifer"))
+    return (gtresults, gtErrors, pc)
 
 def genResults(clmap, gt):
     gtresults = clmap * (gt!=0)
@@ -111,12 +110,15 @@ def runGauss(dcb, gt):
     clmap = gmlc.classify_image(dcb)
     return (classes, gmlc, clmap)
 
-def displayPlots(clmap, gt, gtresults = None, gtErrors = None):
-    if (gtresults and gtErrors is None):
+def displayPlots(clmap, gt, gtresults = None, gtErrors = None, title = 'classifier'):
+    if (gtresults is None and gtErrors is None):
         (gtresults, gtErrors) = genResults(clmap, gt)
-    v0 = imshow(classes=clmap)
-    v1 = imshow(classes = gtresults)
-    v2 = imshow(classes = gtErrors)
+    v0 = imshow(classes=clmap, title=(title+" results"))
+    pylab.savefig((title+" results.png"), bbox_inches='tight')
+    v1 = imshow(classes = gtresults, title=(title+" gt Results"))
+    pylab.savefig((title + " gt Results.png"), bbox_inches='tight')
+    v2 = imshow(classes = gtErrors, title=(title+" Error"))
+    pylab.savefig((title + " Error.png"), bbox_inches='tight')
 
 
 if __name__=="__main__":
@@ -145,80 +147,25 @@ if __name__=="__main__":
 
     t = np.swapaxes(out_dcb, 0, 2)
     t = np.swapaxes(t, 0, 1)
-    testImg = t.real.astype(np.float32, copy=False)
+    fftImg = t.real.astype(np.float32, copy=False)
     print('SHAPE OF INPUT IMG: ' + str(np.shape(img)))
-    print('SHAPE OF FFT OUT: ' + str(np.shape(testImg)))
+    print('SHAPE OF FFT OUT: ' + str(np.shape(fftImg)))
 
 
     #(m, c) = runKmeans(form.pltView1, testImg)
 
-    # Display output from raw data
-    classes_old = create_training_classes(img, gt)
-    gmlc_old = GaussianClassifier(classes_old, min_samples=200)
-    clmap_old = gmlc_old.classify_image(img)
-    hh = imshow(testImg[:,:,3])
-    g = imshow(classes=clmap_old)
+    view_cube(fftImg)
 
-    # Display output from fft data
-    classes = create_training_classes(testImg, gt)
-    gmlc = GaussianClassifier(classes, min_samples=200)
-    clmap = gmlc.classify_image(testImg)
-    print(clmap)
-    v = imshow(classes=clmap)
+    (raw_results, raw_Errors) = runSpectral(img, gt, title="Raw")
+    (fft_results, fft_Errors) = runSpectral(fftImg, gt, title="FFT")
 
-    gtresults = clmap * (gt!=0)
-    v = imshow(classes=gtresults)
-    gtErrors = gtresults * (gtresults != gt)
-    v = imshow(classes=gtErrors)
+    (raw_pc_results, raw_pc_Errors, raw_pc) = runPCA(img, gt, title="Raw")
+    (fft_pc_results, fft_pc_Errors, fft_pc) = runPCA(fftImg, gt, title="FFT")
+    xdata = fft_pc.transform(fftImg)
+    w = view_nd(xdata[:, :, :10], classes=gt.astype(np.int8, copy=False), title="FFT_DCB PCA Components")
 
-    # Perform PCA on filtered and unfiltered data
-
-    pc_img = principal_components(img)
-    pc_fimg = principal_components(testImg)
-    v = imshow(pc_img.cov)
-    v = imshow(pc_fimg.cov)
-    pc_0999 = pc_img.reduce(fraction=0.999)
-    pcf_0999 = pc_fimg.reduce(fraction=0.999)
-
-    # Transform PCA data to useable format
-
-    img_pc = pc_0999.transform(img)
-    imgf_pc = pcf_0999.transform(testImg)
-
-    # Show top 3 componenets for each data
-
-    v = imshow(img_pc[:, :, :3], stretch_all=True)
-    v = imshow(imgf_pc[:, :, :3], stretch_all=True)
-
-    # Train Gaussian Classifier on new data
-
-    classes_pc = create_training_classes(img_pc, gt)
-    classes_pcf = create_training_classes(imgf_pc, gt)
-    gmlc_pc = GaussianClassifier(classes_pc)
-    gmlc_pcf = GaussianClassifier(classes_pcf)
-
-    # Perform Gaussian Classifer on data
-
-    clmap_pc = gmlc_pc.classify_image(img_pc)
-    clmap_pcf = gmlc_pcf.classify_image(imgf_pc)
-
-    # Show only trained data, remove anomalies
-
-    clmap_pc_training = clmap_pc * (gt != 0)
-    clmap_pcf_training = clmap_pcf * (gt != 0)
-
-    # Show Classified images
-
-    v = imshow(classes=clmap_pc_training)
-    v = imshow(classes=clmap_pcf_training)
-
-    # Show errors of classification
-
-    pc_training_errors = clmap_pc_training * (clmap_pc_training != gt)
-    pcf_training_errors = clmap_pcf_training * (clmap_pcf_training != gt)
-
-
-
+    ydata = fft_pc.transform(img)
+    w = view_nd(ydata[:, :, :10], classes=gt.astype(np.int8, copy=False), title="DCB PCA Components")
 
     #subplot = form.matWidget0.getFigure().imshow(clmap)
     #form.matWidget0.
