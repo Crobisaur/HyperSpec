@@ -30,13 +30,24 @@ import HyperSpecGui
 show_full_out = False
 if show_full_out: np.set_printoptions(threshold=np.nan)
 
-def getData(filename=None):
+
+def getData(filename=None, dat_idx=None, lab_idx=None):
     if filename is None: filename = 'D:\-_Hyper_Spec_-\HYPER_SPEC_TEST.h5'
     f = h5py.File(filename, 'r')
-    dcb = f['data'][:] #Extract normalized data for svm b/c intensity sensitive
-    labels = f['labels'][:]
+    if dat_idx is None:
+        dcb = f['data'][:] #Extract normalized data for svm b/c intensity sensitive
+    else:
+        dcb = f['data'][:, :, dat_idx:dat_idx+len(f['bands'])]
+
+    if lab_idx is None:
+        labels = f['labels'][:]
+        classLabels = f['classLabels'][:]
+    else:
+        labels = f['labels'][:, :, lab_idx]
+        classLabels = f['classLabels'][:, :, lab_idx]
+
     bands = f['bands'][:]
-    classLabels = f['classLabels'][:]
+    #classLabels = f['classLabels'][:]
     out = {'dcb': dcb, 'labels': labels, 'lambdas': bands, 'classLabels': classLabels}
     f.close()
     return out

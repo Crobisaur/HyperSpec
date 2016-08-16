@@ -4,9 +4,11 @@ from PyQt4 import QtGui, QtCore
 import sys
 import HyperSpecGui
 import numpy as np
+from scipy import ndimage
 import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pylab as pylab
+import matplotlib.pyplot as plt
 
 import time
 import pyqtgraph
@@ -14,6 +16,13 @@ import hs_imFFTW as hs
 from spectral import *
 spectral.settings.WX_GL_DEPTH_SIZE = 16
 
+
+'''
+background = 0
+red = 1 WBC
+green = 2 RBC
+pink = 3 nuclear material
+yellow = 4 ignore'''
 
 class HyperSpecApp(QtGui.QMainWindow, HyperSpecGui.Ui_MainWindow):
     def __init__(self, parent=None):
@@ -120,10 +129,23 @@ def displayPlots(clmap, gt, gtresults = None, gtErrors = None, title = 'classifi
     v2 = imshow(classes = gtErrors, title=(title+" Error"))
     pylab.savefig((title + " Error.png"), bbox_inches='tight')
 
+def cleanResults(inputImg, cls_iter=1, open_iter=1):
+    open = ndimage.binary_opening(inputImg, iterations=open_iter)
+    close = ndimage.binary_opening(inputImg, iterations=cls_iter)
+    return (open, close)
+
+
+def combineLabels(rbc, wbc, nuc, bkgd):
+    out = np.zeros(np.shape(rbc),dtype=np.float32)
+    out[rbc == 1] = 2.0
+    out[wbc == 1] = 1.0
+    out[nuc == 1] = 3.0
+    out[bkgd == 1] = 4.0
+    return out
 
 if __name__=="__main__":
-    trainData = hs.getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
-    testData = hs.getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TEST_RED.h5')
+    trainData = hs.getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TRAIN.h5', dat_idx=25*49, lab_idx=49)
+    #testData = hs.getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TRAIN.h5')
 
 
 
@@ -132,7 +154,8 @@ if __name__=="__main__":
     form = HyperSpecApp()
     form.show()
     form.update() #start with something
-    img = trainData['dcb'][:, :, 343:370]
+    #print("TRAIN " + str(np.shape(trainData['dcb'])))
+    img = trainData['dcb'][:, :, 0:25]  #fromn red test 343:370
     img1 = np.swapaxes(img, 2, 0)
 
     form.ImageView1.setImage(img1)
@@ -142,8 +165,8 @@ if __name__=="__main__":
     out_dcb = hs.dcbFilter(img)
     form.ImageView1.setImage(out_dcb.real)
     gtbatch = adjustLabels(trainData['classLabels'])
-    gt = gtbatch[:, :, 11]
-    #form.ImageView2.setImage(gt)
+    gt = gtbatch
+    form.ImageView2.setImage(gt)
 
     t = np.swapaxes(out_dcb, 0, 2)
     t = np.swapaxes(t, 0, 1)
@@ -152,7 +175,8 @@ if __name__=="__main__":
     print('SHAPE OF FFT OUT: ' + str(np.shape(fftImg)))
 
 
-    #(m, c) = runKmeans(form.pltView1, testImg)
+    (m, c) = runKmeans(form.pltView1, fftImg)
+    (mm, cc) = runKmeans(form.pltView2, img)
 
     view_cube(fftImg)
 
@@ -161,11 +185,47 @@ if __name__=="__main__":
 
     (raw_pc_results, raw_pc_Errors, raw_pc) = runPCA(img, gt, title="Raw")
     (fft_pc_results, fft_pc_Errors, fft_pc) = runPCA(fftImg, gt, title="FFT")
+    print('SHAPE of results: ' + str(np.shape(fft_pc_results)))
+    print(fft_pc_results)
     xdata = fft_pc.transform(fftImg)
-    w = view_nd(xdata[:, :, :10], classes=gt.astype(np.int8, copy=False), title="FFT_DCB PCA Components")
+    w = view_nd(xdata[:, :, :5], classes=gt.astype(np.int8, copy=False), title="FFT_DCB PCA Components")
 
     ydata = fft_pc.transform(img)
-    w = view_nd(ydata[:, :, :10], classes=gt.astype(np.int8, copy=False), title="DCB PCA Components")
+    w = view_nd(ydata[:, :, :5], classes=gt.astype(np.int8, copy=False), title="DCB PCA Components")
+
+
+    # perform mathematical morphology operations to reduce noise in results
+    # convert each class to binary images then recombine a the end
+    rbc_img = fft_pc_results == 2.0
+    wbc_img = fft_pc_results == 1.0
+    nuc_img = fft_pc_results == 3.0
+    bkg_img = fft_pc_results == 4.0
+
+    (wbc_o, wbc_c) = cleanResults(wbc_img)
+    (rbc_o, rbc_c) = cleanResults(rbc_img)
+    (nuc_o, nuc_c) = cleanResults(nuc_img)
+    (bkg_o, bkg_c) = cleanResults(bkg_img)
+
+
+    open_rbc = ndimage.binary_opening(rbc_img)
+    clse_rbc = ndimage.binary_closing(open_rbc)
+    print(rbc_img)
+
+
+
+
+
+    tit = combineLabels(rbc_o, wbc_o, nuc_o, bkg_o)
+    v10 = imshow(classes=tit)
+    form.ImageView3.setImage(rbc_c)
+    form.ImageView1.setImage(wbc_c)
+    form.ImageView2.setImage(tit)
+    #v9 = plt.imshow(rbc_img) #, title="RBC results")
+    #pylab.savefig(("RBC_results.png"), bbox_inches='tight')
+    #v10 = imshow(classes=open_rbc, title="RBC open_results")
+    #pylab.savefig(("RBC_open_results.png"), bbox_inches='tight')
+    #v12 = imshow(classes=clse_rbc, title="RBC_closed results")
+    #pylab.savefig(("RBC_closed_results.png"), bbox_inches='tight')
 
     #subplot = form.matWidget0.getFigure().imshow(clmap)
     #form.matWidget0.
