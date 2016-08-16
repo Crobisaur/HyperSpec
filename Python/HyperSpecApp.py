@@ -136,12 +136,29 @@ def cleanResults(inputImg, cls_iter=1, open_iter=1):
 
 
 def combineLabels(rbc, wbc, nuc, bkgd):
-    out = np.zeros(np.shape(rbc),dtype=np.float32)
+    out = np.zeros(np.shape(rbc), dtype=np.float64)
+    out[bkgd == 1] = 4.0
     out[rbc == 1] = 2.0
     out[wbc == 1] = 1.0
     out[nuc == 1] = 3.0
-    out[bkgd == 1] = 4.0
+    out[out == 0] = 0.0
+
+    print(out)
     return out
+
+def create_rgb(classimg, colormap=None):
+    if colormap is None:
+        colormap = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [255, 0, 255], [255, 255, 0]], dtype=np.ubyte)
+    h,w = np.shape(classimg)
+    out = np.zeros([h, w, 3], dtype=np.uint8)
+    out[classimg == 0.0] = colormap[0]
+    out[classimg == 1.0] = colormap[1]
+    out[classimg == 2.0] = colormap[2]
+    out[classimg == 3.0] = colormap[3]
+    out[classimg == 4.0] = colormap[4]
+
+    return out
+
 
 if __name__=="__main__":
     trainData = hs.getData(filename='D:\-_Hyper_Spec_-\HYPER_SPEC_TRAIN.h5', dat_idx=25*49, lab_idx=49)
@@ -207,16 +224,19 @@ if __name__=="__main__":
     (bkg_o, bkg_c) = cleanResults(bkg_img)
 
 
-    open_rbc = ndimage.binary_opening(rbc_img)
-    clse_rbc = ndimage.binary_closing(open_rbc)
-    print(rbc_img)
+    #open_rbc = ndimage.binary_opening(rbc_img)
+    #clse_rbc = ndimage.binary_closing(open_rbc)
+    #print(rbc_img)
 
 
 
 
 
-    tit = combineLabels(rbc_o, wbc_o, nuc_o, bkg_o)
-    v10 = imshow(classes=tit)
+    tit = combineLabels(rbc_o, wbc_o, nuc_o, bkg_img)
+    color = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0]], dtype=np.ubyte)
+    tits = create_rgb(tit, color)
+    v6876 = imshow(tits, title="Cleaned FFT PCA GT Result")
+    pylab.savefig("Cleaned FFT PCA GT Result.png", bbox_inches='tight')
     form.ImageView3.setImage(rbc_c)
     form.ImageView1.setImage(wbc_c)
     form.ImageView2.setImage(tit)
