@@ -5,6 +5,7 @@ import sys
 import HyperSpecGui
 import numpy as np
 from scipy import ndimage
+from scipy import fftpack as ft
 import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pylab as pylab
@@ -41,7 +42,7 @@ class HyperSpecApp(QtGui.QMainWindow, HyperSpecGui.Ui_MainWindow):
         #imv = pyqtgraph.image(data)
         self.ImageView2.setImage(data)
 
-        self.ImageView2.ui.histogram.gradient.setColorMap(clrmp)
+        #self.ImageView2.ui.histogram.gradient.setColorMap(clrmp)
 
 
 
@@ -175,15 +176,26 @@ if __name__=="__main__":
     img = trainData['dcb'][:, :, 0:25]  #fromn red test 343:370
     img1 = np.swapaxes(img, 2, 0)
 
-    form.ImageView1.setImage(img1)
-    mask = hs.genMask(offset=11)
-    #form.ImageView2.setImage(mask, levels=[np.amin(mask),np.amax(mask)+.0001])
+    form.ImageView2.setImage(img1)
+    form.ImageView2.export("Pre_FFT_Masking_.png")
+    #create FFT Plot for paper
+    fft_example = hs.hsfft(img1)
+    log_fft = np.log2(fft_example)
+    aaa = ft.fftshift(log_fft.real)
+    form.ImageView3.setImage(aaa) #levels=[np.amin(fft_example.real), np.amax(fft_example.real)+.01])
+    form.ImageView3.export("FFT_DCB_.png")
+    #v89 = imshow(aaa)
+    #aaaa = ImageView.set_data(aaa)
+
+    mask = hs.genMask(offset=41)
+    #form.ImageView3.setImage(mask, levels=[np.amin(mask),np.amax(mask)+.0001])
     #ImageView doesn't seem to display binary arrays very well so add a small value.
     out_dcb = hs.dcbFilter(img)
     form.ImageView1.setImage(out_dcb.real)
+    form.ImageView1.export("Post_FFT_Masking_.png")
     gtbatch = adjustLabels(trainData['classLabels'])
     gt = gtbatch
-    form.ImageView2.setImage(gt)
+    #form.ImageView2.setImage(gt)
 
     t = np.swapaxes(out_dcb, 0, 2)
     t = np.swapaxes(t, 0, 1)
@@ -218,6 +230,7 @@ if __name__=="__main__":
     nuc_img = fft_pc_results == 3.0
     bkg_img = fft_pc_results == 4.0
 
+
     (wbc_o, wbc_c) = cleanResults(wbc_img)
     (rbc_o, rbc_c) = cleanResults(rbc_img)
     (nuc_o, nuc_c) = cleanResults(nuc_img)
@@ -229,17 +242,40 @@ if __name__=="__main__":
     #print(rbc_img)
 
 
+    def calcAccuracy(bin, gt, c):
+        '''takes binary image of one class and compares it to the ground
+        truth of that class.  Error is calculated based on weighted empirical error'''
+        class_gt = gt[gt == c]
+        class_match = class_gt[bin]
+        class_err = class_match
 
 
-
-    tit = combineLabels(rbc_o, wbc_o, nuc_o, bkg_img)
+    ti = combineLabels(rbc_o, wbc_o, nuc_o, bkg_img)
     color = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0]], dtype=np.ubyte)
-    tits = create_rgb(tit, color)
-    v6876 = imshow(tits, title="Cleaned FFT PCA GT Result")
+    tis = create_rgb(ti, color)
+
+    #calculate accuracy for each class.
+
+
+    v6876 = imshow(tis, title="Cleaned FFT PCA GT Result")
     pylab.savefig("Cleaned FFT PCA GT Result.png", bbox_inches='tight')
-    form.ImageView3.setImage(rbc_c)
-    form.ImageView1.setImage(wbc_c)
-    form.ImageView2.setImage(tit)
+    #form.ImageView3.setImage(rbc_c)
+    #form.ImageView1.setImage(wbc_c)
+    #form.ImageView2.setImage(ti)
+
+    fft_classes = create_training_classes(fftImg, gt, True)
+    fft_means = np.zeros((len(fft_classes), fftImg.shape[2]), float)
+
+    for (e, g) in enumerate(fft_classes):
+        fft_means[e] = g.stats.mean
+
+    fft_angles = spectral_angles(fftImg, fft_means)
+    fft_clmap = np.argmin(fft_angles, 2)
+    v20 = imshow(classes=((fft_clmap + 1) * (gt != 0)))
+
+
+
+
     #v9 = plt.imshow(rbc_img) #, title="RBC results")
     #pylab.savefig(("RBC_results.png"), bbox_inches='tight')
     #v10 = imshow(classes=open_rbc, title="RBC open_results")

@@ -86,7 +86,7 @@ def shapeData(data, labels, numExamples, numBands, altDims = None):
 
 
 def hsfft(dcb):
-    '''Takes in a datacube and 2d mask'''
+    '''Takes in a datacube (dcb) and returns n-dim FFT of datacube'''
     temp_dcb = pyfftw.n_byte_align(dcb, 16, dtype='complex128')
     dcb_fft = pyfftw.interfaces.numpy_fft.fftn(temp_dcb)
     return dcb_fft
