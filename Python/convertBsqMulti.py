@@ -2,18 +2,20 @@ from numpy import *
 import matplotlib.pyplot as plt
 import struct, os
 from PIL import Image
-#import imaging
 import sys
-sys.path
-#from libtiff import TIFFfile
-#import tifffile.c as tiff
 import tifffile as TIFFfile
 from scipy import io
 import glob ## used to count files in a directory
 
+#import imaging
+#from libtiff import TIFFfile
+#import tifffile.c as tiff
+
 sys.path
 ## =========================================================================================================
 def imshow(image, ax=None, **kwargs):
+    '''Function not necessary for decoding data, doesn't work too well in windows as there is no 
+    graphical backend supported by default'''
     image = array(image)
     iscolor = (image.ndim == 3)
 
@@ -49,6 +51,8 @@ def imshow(image, ax=None, **kwargs):
 
 ## =========================================================================================================
 def readbsq(filename, debug=False):
+    '''Reads in and decodes .bsq files encoded by RP software.  Not the same standard format used in more
+    popular ENVI compatible software.'''
     filebytes = open(filename, "rb").read()
     output = struct.unpack('<25c', filebytes[0:25])
     #vv = output.join()
@@ -56,11 +60,9 @@ def readbsq(filename, debug=False):
     #in python 3.x you need to put a b'' instead of '' to signify you're reading bytes into a string/bytearray
     #putting a b in front of a string converts it into a byte array.  Why did the docs never mention this? beats me.
     version_string = b''.join(vv)
+    
     #outputL = output.decode()
-
     #version_string = ''.join(outputL)
-
-
 
     if debug: print(version_string + '\n')
 
@@ -128,8 +130,10 @@ def write_16bitTiff(filename, image):
 
 ## ============================================================================================
 def write_dcb_tiffs(fileroot, dcb, lambdas = None):
-    (Nx,Ny,Nw) = dcb.shape
+    '''Writes numpy array 'dcb' to tiff files, lambdas is an array (len Nw) for each band 
+    wavelength'''
 
+    (Nx,Ny,Nw) = dcb.shape
     if (lambdas == None):
         lambdas = []
         for w in arange(Nw):
@@ -164,6 +168,9 @@ if __name__ == "__main__":
     #bsqCount = len(objNames)
     ##  bsqCount = len(glob.glob1(pathName,"*.bsq")) Need both number of files as well as filenames
 
+    #This version, when targeting a directory, scans all subdirs for .bsq files.  Each subdir is 
+    #given a TIF and MAT directory to store output data formats respectively.
+
     ## This loop repeats for all subfolders
     all_subDirs = [d for d in os.listdir('.') if os.path.isdir(d)]
 
@@ -174,14 +181,13 @@ if __name__ == "__main__":
 
         ## insert for loop here
         for i in range(0,bsqCount):
-
             dir = os.path.dirname(os.path.join(sDir,objNames[i]))
 
             if not os.path.exists(dir+'/TIF/'):
                 os.mkdir(dir+'/TIF/')
+
             outfile = dir + '/TIF/' + os.path.basename(os.path.join(sDir,objNames[i]))[:-4]
             (dcb, lambdas) = readbsq(os.path.join(sDir,objNames[i]))
-
             print('dcb.shape=', dcb.shape)
             print('dcb.dtype=', dcb.dtype)
             print('lambdas=', lambdas)
@@ -190,23 +196,16 @@ if __name__ == "__main__":
             minval = amin(dcb)
             maxval = amax(dcb)
             print('original dcb: minval=%f, maxval=%f' % (minval, maxval))
-
             new_dcb = int16((dcb - minval) * (2**15 - 1) / float64(maxval - minval))
             print('new_dcb.dtype=', new_dcb.dtype)
             print('rescaled dcb: minval=%i, maxval=%i' % (amin(new_dcb), amax(new_dcb)))
-
             img = dcb[:, :, 0]
             im = Image.fromarray(img)
-            #im.show()
-            #imshow(img)
 
         ## Write the result as a 16-bit TIFF file. Note that very few TIFF viewers support
         ## 16-bit pixels! ImageJ is a free and widely available one, though.
             write_dcb_tiffs(outfile, dcb, lambdas)
 
         ## Finally, write out the BSQ file as a Matlab-style .mat file.
-            #io.savemat(outfile, mdict={'dcb':dcb})
-
-            #plt.show()
-
+            io.savemat(outfile, mdict={'dcb':dcb})
 
