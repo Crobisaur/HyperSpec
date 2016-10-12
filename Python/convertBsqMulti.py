@@ -1,8 +1,9 @@
 from numpy import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import struct, os
 from PIL import Image
 import sys
+sys.path
 import tifffile as TIFFfile
 from scipy import io
 import glob ## used to count files in a directory
@@ -11,43 +12,43 @@ import glob ## used to count files in a directory
 #from libtiff import TIFFfile
 #import tifffile.c as tiff
 
-sys.path
+
 ## =========================================================================================================
-def imshow(image, ax=None, **kwargs):
-    '''Function not necessary for decoding data, doesn't work too well in windows as there is no 
-    graphical backend supported by default'''
-    image = array(image)
-    iscolor = (image.ndim == 3)
+# def imshow(image, ax=None, **kwargs):
+#     '''Function not necessary for decoding data, doesn't work too well in windows as there is no 
+#     graphical backend supported by default'''
+#     image = array(image)
+#     iscolor = (image.ndim == 3)
 
-    if (ax == None):
-        ax = plt.gca()
-    def myformat_coord(x, y):
-        col = int(x+0.5)
-        row = int(y+0.5)
-        if iscolor:
-            (Nx,Ny,_) = image.shape
-        else:
-            (Nx,Ny) = image.shape
+#     if (ax == None):
+#         ax = plt.gca()
+#     def myformat_coord(x, y):
+#         col = int(x+0.5)
+#         row = int(y+0.5)
+#         if iscolor:
+#             (Nx,Ny,_) = image.shape
+#         else:
+#             (Nx,Ny) = image.shape
 
-        if (col >= 0) and (col < Ny) and (row >= 0) and (row < Nx):
-            if iscolor:
-                z = image[row,col,:]
-            else:
-                z = image[row,col]
+#         if (col >= 0) and (col < Ny) and (row >= 0) and (row < Nx):
+#             if iscolor:
+#                 z = image[row,col,:]
+#             else:
+#                 z = image[row,col]
 
-            if iscolor or (int(z) == z):
-                if iscolor:
-                    return('x=%i, y=%i, z=(%i,%i,%i)' % (row, col, z[0], z[1], z[2]))
-                else:
-                    return('x=%i, y=%i, z=%i' % (row, col, z))
-            else:
-                return('x=%i, y=%i, z=%1.4f' % (row, col, z))
-        else:
-           return('x=%i, y=%i'%(y, x))
+#             if iscolor or (int(z) == z):
+#                 if iscolor:
+#                     return('x=%i, y=%i, z=(%i,%i,%i)' % (row, col, z[0], z[1], z[2]))
+#                 else:
+#                     return('x=%i, y=%i, z=%i' % (row, col, z))
+#             else:
+#                 return('x=%i, y=%i, z=%1.4f' % (row, col, z))
+#         else:
+#            return('x=%i, y=%i'%(y, x))
 
-    plt.imshow(image, **kwargs)
-    ax.format_coord = myformat_coord
-    return
+#     plt.imshow(image, **kwargs)
+#     ax.format_coord = myformat_coord
+#     return
 
 ## =========================================================================================================
 def readbsq(filename, debug=False):
@@ -157,34 +158,52 @@ def readtiff(filename):
     img = flipud(img)
     return(img)
 
+## ============================================================================================
+
+def main(argv):
+    inputPath = ''
+    outputfile = ''
+    try:
+        opts, args = getopt.getopt(argv,"hi:tm",["iPath=", "tiff=", "mat="])
+    except getopt.GetoptError:
+        print('create_bsq_dataset.py -i <inputPath> -t -m')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('create_bsq_dataset.py -i <inputPath> -t -m')
+            #print('-t: Generate TIFF files default is True')
+            print('-m: Generate MAT files default is False')
+            sys.exit()
+        elif opt in ("-i", "--ipath"):
+            inputFile = arg
+            print('Input DIR = "', inputPath)
+        elif opt in ("-t", "--tiff"):
+            runTiff = True
+            #print('Output File = "', outputfile)
+        elif opt in ("-m", "--mat"):
+            runMat = True
+
+    scanDir(inputFile, runTiff, runMat)
 
 ## ============================================================================================
-#main section of convertBsqMulti.py
-
-if __name__ == "__main__":
-    pathName = r'/media/crob/HyperSpec/-_Last_Minute_Data_-'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1  /media/crob/USB30FD/HyperSpec_Data/All bsq static
-    os.chdir(pathName)
-    #objNames = glob.glob1(pathName,"*.bsq")
-    #bsqCount = len(objNames)
-    ##  bsqCount = len(glob.glob1(pathName,"*.bsq")) Need both number of files as well as filenames
-
-    #This version, when targeting a directory, scans all subdirs for .bsq files.  Each subdir is 
-    #given a TIF and MAT directory to store output data formats respectively.
-
+# dir loop 
+# no need to catch if no path given since prompt will throw if no argument given.
+def scanDir(path, t=True, m=False):
+    os.chdir(path)
     ## This loop repeats for all subfolders
     all_subDirs = [d for d in os.listdir('.') if os.path.isdir(d)]
 
     for dirs in all_subDirs:
         sDir = os.path.join(pathName, dirs)
-        objNames = glob.glob1(sDir,"*.bsq")
+        objNames = glob.glob1(sDir, "*.bsq")
         bsqCount = len(objNames)
 
         ## insert for loop here
         for i in range(0,bsqCount):
             dir = os.path.dirname(os.path.join(sDir,objNames[i]))
 
-            if not os.path.exists(dir+'/TIF/'):
-                os.mkdir(dir+'/TIF/')
+            if not os.path.exists(dir + '/TIF/'):
+                os.mkdir(dir +'/TIF/')
 
             outfile = dir + '/TIF/' + os.path.basename(os.path.join(sDir,objNames[i]))[:-4]
             (dcb, lambdas) = readbsq(os.path.join(sDir,objNames[i]))
@@ -204,8 +223,71 @@ if __name__ == "__main__":
 
         ## Write the result as a 16-bit TIFF file. Note that very few TIFF viewers support
         ## 16-bit pixels! ImageJ is a free and widely available one, though.
-            write_dcb_tiffs(outfile, dcb, lambdas)
+            if t: write_dcb_tiffs(outfile, dcb, lambdas)
 
         ## Finally, write out the BSQ file as a Matlab-style .mat file.
-            io.savemat(outfile, mdict={'dcb':dcb})
+            if m: io.savemat(outfile, mdict={'dcb':dcb})
+
+
+
+## ============================================================================================
+#main section of convertBsqMulti.py
+if __name__ == "__main__":
+    main(sys.argv[1:])
+    
+
+
+    #pathName = r'/media/crob/HyperSpec/-_Last_Minute_Data_-'  #F:\-_Research Data_-\Blood 9_3_2015\Slide 1  /media/crob/USB30FD/HyperSpec_Data/All bsq static
+    #os.chdir(pathName)
+    #objNames = glob.glob1(pathName,"*.bsq")
+    #bsqCount = len(objNames)
+    ##  bsqCount = len(glob.glob1(pathName,"*.bsq")) Need both number of files as well as filenames
+
+    #This version, when targeting a directory, scans all subdirs for .bsq files.  Each subdir is 
+    #given a TIF and MAT directory to store output data formats respectively.
+
+    ## This loop repeats for all subfolders
+
+
+
+
+
+
+
+    # all_subDirs = [d for d in os.listdir('.') if os.path.isdir(d)]
+
+    # for dirs in all_subDirs:
+    #     sDir = os.path.join(pathName, dirs)
+    #     objNames = glob.glob1(sDir,"*.bsq")
+    #     bsqCount = len(objNames)
+
+    #     ## insert for loop here
+    #     for i in range(0,bsqCount):
+    #         dir = os.path.dirname(os.path.join(sDir,objNames[i]))
+
+    #         if not os.path.exists(dir+'/TIF/'):
+    #             os.mkdir(dir+'/TIF/')
+
+    #         outfile = dir + '/TIF/' + os.path.basename(os.path.join(sDir,objNames[i]))[:-4]
+    #         (dcb, lambdas) = readbsq(os.path.join(sDir,objNames[i]))
+    #         print('dcb.shape=', dcb.shape)
+    #         print('dcb.dtype=', dcb.dtype)
+    #         print('lambdas=', lambdas)
+
+    #     ## Convert type double pixel data to type uint16 for exporting to TIFF.
+    #         minval = amin(dcb)
+    #         maxval = amax(dcb)
+    #         print('original dcb: minval=%f, maxval=%f' % (minval, maxval))
+    #         new_dcb = int16((dcb - minval) * (2**15 - 1) / float64(maxval - minval))
+    #         print('new_dcb.dtype=', new_dcb.dtype)
+    #         print('rescaled dcb: minval=%i, maxval=%i' % (amin(new_dcb), amax(new_dcb)))
+    #         img = dcb[:, :, 0]
+    #         im = Image.fromarray(img)
+
+    #     ## Write the result as a 16-bit TIFF file. Note that very few TIFF viewers support
+    #     ## 16-bit pixels! ImageJ is a free and widely available one, though.
+    #         write_dcb_tiffs(outfile, dcb, lambdas)
+
+    #     ## Finally, write out the BSQ file as a Matlab-style .mat file.
+    #         io.savemat(outfile, mdict={'dcb':dcb})
 

@@ -29,6 +29,9 @@ from dataCube import *
 import dcb_HDF5
 
 #use from when importing objects from modules (i.e. a data structure object from a data structure module)
+#Loading data like this into objects is a memory expensive operation and is ultimately unneccessary.
+#Storing data from one prism in it's own database removes the need to store metadata with each file.
+#HDF5 and numpy arrays are much more efficient than an abstract data type.
 
 def readBsqToObj(path,mPath):
     dCube = dataCube()

@@ -85,7 +85,6 @@ def convLabels(labelImg, numBands):
     yellow = 4 ignore
     '''
 
-
     #b = np.uint8(numBands / 31)
     # print(b / 31)
     tempRed = labelImg[:,:,0] == 255
@@ -105,7 +104,6 @@ def convLabels(labelImg, numBands):
 
 def convert_labels(labels,n_classes, debug = False):
     for j in range(n_classes):
-
         temp = labels == j
         temp = temp.astype(int)
         if j > 0:
@@ -113,6 +111,7 @@ def convert_labels(labels,n_classes, debug = False):
             print(temp[:])
         else:
             conv_labels = temp
+
     print(np.shape(conv_labels))
     conv_labels = np.reshape(conv_labels, [len(labels), n_classes], order='F')
     if debug: print(np.shape(conv_labels))
