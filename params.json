@@ -1,0 +1,6 @@
+{
+  "name": "HyperSpec",
+  "tagline": "Hyperspectral image analysis project developed to transform HS data for analysis and classification",
+  "body": "### Welcome to HyperSpec\r\nThis is a project developed by me, (@crobisaur).  Disclaimer: This page is currently under development and may be poorly formatted or incorrect.\r\n\r\n### What is it?\r\nHyperSpec is a collection of scripts written to transform non-standard binary sequential (BSQ) data into simple to use numpy arrays.  From there several other packages were implemented to analyze and classify hyperspectral data.",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
