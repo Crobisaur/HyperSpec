@@ -77,6 +77,9 @@ class HyperSpecApp(QtGui.QMainWindow, HyperSpecGui.Ui_MainWindow):
         #if self.chkMore.isChecked():
             #QtCore.QTimer.singleShot(1, self.update)  # QUICKLY repeat
 
+    def done(self):
+        QtGui.QMessageBox.information(self, "Done!", "Done ")
+
 
 def runKmeans(view, inputImg, clusters=6, iters=300):
     (m, c) = kmeans(inputImg, clusters, iters)
