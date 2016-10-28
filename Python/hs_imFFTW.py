@@ -6,14 +6,14 @@ from spectral import *
 import numpy as np
 from PyQt4 import QtGui
 import pyqtgraph as pg
-from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
+#from pyqtgraph.widgets.MatplotlibWidget import MatplotlibWidget
 from scipy import fftpack as ft
 import h5py
 import matplotlib
 #matplotlib.use('qt4')
 #%matplotlib inline
-import matplotlib.pyplot as plt
-plt.style.use('ggplot')
+#import matplotlib.pyplot as plt
+#plt.style.use('ggplot')
 import time
 from skimage import io, exposure, img_as_uint, img_as_float
 import png
@@ -31,7 +31,7 @@ show_full_out = False
 if show_full_out: np.set_printoptions(threshold=np.nan)
 
 
-def getData(filename=None, dat_idx=None, lab_idx=None):
+def getData(filename=None, dat_idx=None, lab_idx=None, stack=False):
     if filename is None: filename = 'D:\-_Hyper_Spec_-\HYPER_SPEC_TEST.h5'
     f = h5py.File(filename, 'r')
     if dat_idx is None:
