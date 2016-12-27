@@ -1,0 +1,9 @@
+This file will describe a "how-to" for decoding .BSQ files into 16-bit TIFF files
+
+In order to use the bsq2tiffs program, several dependencies are required,
+these dependencies can be satisfied with the following python packages.
+
+    numpy
+    scipy
+    pillow
+    pypng
