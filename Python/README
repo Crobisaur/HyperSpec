@@ -1,5 +1,9 @@
 This file will describe a "how-to" for decoding .BSQ files into 16-bit TIFF files
 
+Requirements:
+
+	Python 2.7
+
 In order to use the bsq2tiffs program, several dependencies are required,
 these dependencies can be satisfied with the following python packages.
 
@@ -7,3 +11,34 @@ these dependencies can be satisfied with the following python packages.
     scipy
     pillow
     pypng
+
+As well as the following dependencies hosted in this repository's 'python' folder
+
+	tifffile.c
+	tifffile.py
+
+to use the this program as is**, simply edit line 161 in the file 'convertBsqMulti.py'
+and paste in the path to the directory storing your imaging sessions.
+
+Currently this program will only look for bsq files within driectories located at the given path.
+
+For example, consider your data is stored as follows
+
+to decode the BSQ data you must pass the "/home/**USER**/**DATA_DIR**" path in order to decode these files.  
+
+/home
+	/**USER**
+		/**DATA_DIR**
+			/2016_12_***
+				***.BSQ
+				***.BSQ
+				***.BSQ
+			/2016_12_***
+				***.BSQ
+				***.BSQ
+				***.BSQ
+
+Once the program executes, the converted files can be found within the 'TIF' directory created in each subdir.
+
+
+**A modified version of this script is in development to allow for passing this path directly into the program via comand line.
